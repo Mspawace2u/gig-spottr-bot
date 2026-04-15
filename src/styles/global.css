@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #050505;
+  --color-brand-surface: #0f0f0f;
+  --color-brand-primary: #ff2f92;  /* Punk Rock Pink */
+  --color-brand-secondary: #2de2e6; /* Totes Turquoise */
+  --color-brand-tertiary: #9b5cff;  /* Electric Purple */
+  
+  --font-sans: 'Red Hat Display', sans-serif;
+  --font-mono: 'Red Hat Mono', monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-bg);
+    color: #fafafa;
+    min-height: 100vh;
+    font-family: var(--font-mono);
+    position: relative;
+  }
+
+  h1, h2, h3, h4, .font-red-hat {
+    font-family: 'Red Hat Display', sans-serif;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: white;
+    line-height: 1;
+  }
+}
+
+@layer utilities {
+  .vibe-glass {
+    background-color: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .vibe-glow-pool {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -10;
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(155, 92, 255, 0.1), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(45, 226, 230, 0.08), transparent 40%);
+  }
+
+  .rainbow-border {
+    position: relative;
+    z-index: 1;
+  }
+  .rainbow-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-tertiary), var(--color-brand-secondary), var(--color-brand-primary));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    background-size: 200% 100%;
+    animation: rainbow-rotate 3s linear infinite;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+  }
+  .rainbow-border:hover::before {
+    opacity: 0;
+  }
+
+  /* CUSTOM TURQUOISE TOGGLE CIRCLE */
+  .toggle-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    border: 1px solid #2de2e6; /* Totes Turquoise */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    color: #2de2e6;
+    flex-shrink: 0;
+  }
+
+  .toggle-circle.active {
+    background: #2de2e6;
+    color: white;
+  }
+
+  .toggle-circle:hover {
+    box-shadow: 0 0 15px rgba(45, 226, 230, 0.2);
+  }
+
+  /* SCROLLABLE LIST */
+  .dashboard-list-container {
+    max-height: 450px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+}
+
+@keyframes pulse-opacity {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.animate-pulse-opacity {
+    animation: pulse-opacity 1.5s ease-in-out infinite;
+}
+
+@keyframes rainbow-rotate {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}

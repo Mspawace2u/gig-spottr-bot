@@ -1,0 +1,37 @@
+{
+    "name": "gig-spottr-bot",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Gig Spottr Bot - Analyzes job fit against your CV/resume",
+    "scripts": {
+        "dev": "astro dev --host",
+        "start": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "astro": "astro",
+        "test": "node --test"
+    },
+    "dependencies": {
+        "@astrojs/react": "^5.0.3",
+        "@astrojs/tailwind": "^6.0.2",
+        "@astrojs/vercel": "^10.0.4",
+        "@notionhq/client": "2.2.15",
+        "@tailwindcss/vite": "^4.2.2",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "astro": "^6.1.6",
+        "axios": "^1.13.5",
+        "canvas-confetti": "^1.9.4",
+        "cheerio": "^1.2.0",
+        "framer-motion": "^12.38.0",
+        "lucide-react": "^1.8.0",
+        "next": "^16.1.6",
+        "pdf-parse": "^2.4.5",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "tailwindcss": "^4.2.2"
+    },
+    "devDependencies": {
+        "@types/node": "20.10.0"
+    }
+}
