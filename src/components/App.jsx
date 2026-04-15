@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
-  Rocket, Target, Flame, CheckCircle, AlertTriangle, 
-  Type, Link as LinkIcon, FileText, Upload, 
-  LayoutDashboard, History, PlusSquare as PlusCircle, ChevronDown, ChevronUp, Home, MapPin
+  Rocket, Target, CheckCircle, AlertTriangle, 
+  Upload, LayoutDashboard, PlusSquare as PlusCircle, 
+  ChevronDown, ChevronUp, Home, MapPin
 } from 'lucide-react';
 
 import Button from './UI/Button';
