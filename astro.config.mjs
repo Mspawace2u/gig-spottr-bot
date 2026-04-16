@@ -6,9 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  adapter: vercel({
-    includeFiles: ['./node_modules/pdfjs-dist/**/*']
-  }),
+  adapter: vercel(),
   security: {
     checkOrigin: false
   },

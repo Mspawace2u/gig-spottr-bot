@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "engines": {
-        "node": "22.x"
+        "node": "24.x"
     },
     "description": "Gig Spottr Bot - Analyzes job fit against your CV/resume",
     "scripts": {
@@ -33,6 +33,6 @@
         "tailwindcss": "^4.0.0"
     },
     "devDependencies": {
-        "@types/node": "22.10.0"
+        "@types/node": "24.x"
     }
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Rocket, Target, CheckCircle, AlertTriangle,
+  Target, CheckCircle, AlertTriangle,
   Upload, LayoutDashboard, PlusSquare as PlusCircle,
   ChevronDown, ChevronUp, Home, MapPin
 } from 'lucide-react';
