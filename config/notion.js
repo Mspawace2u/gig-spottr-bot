@@ -73,7 +73,7 @@ export function getNotionProperty(page, propertyName) {
 export function formatNotionProperty(type, value) {
     switch (type) {
         case 'title':
-            return { title: [{ text: { content: value } }] };
+            return { title: [{ text: { content: value || 'Untitled' } }] };
         case 'rich_text':
             if (!value) return { rich_text: [] };
             const chunks = value.match(/[\s\S]{1,2000}/g) || [];
@@ -89,7 +89,8 @@ export function formatNotionProperty(type, value) {
         case 'date':
             return { date: { start: value } };
         case 'url':
-            return { url: value };
+            // Notion API rejects empty strings for URLs; must be valid URI or null
+            return { url: value || null };
         default:
             return null;
     }
