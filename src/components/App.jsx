@@ -444,6 +444,7 @@ export default function App() {
             </motion.div>
         )}
       </AnimatePresence>
+      </main>
     </div>
   );
 }
@@ -596,9 +597,8 @@ function DashboardListing({ report, status, onUpdate }) {
                         </div>
                     </motion.div>
                 )}
-      </AnimatePresence>
-      </main>
-    </div>
-  );
+            </AnimatePresence>
+        </div>
+    );
 }
 
