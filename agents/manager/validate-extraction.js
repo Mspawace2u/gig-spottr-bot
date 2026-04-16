@@ -58,7 +58,8 @@ function validateSkillsExtraction(skills, sourceText, warnings, errors) {
         valid: errors.length === 0,
         warnings: warnings,
         errors: errors,
-        extractedCount: skills.length
+        extractedCount: skills.length,
+        filteredData: skills.filter(skill => !skill.name || isFuzzyMatch(skill.name, sourceText))
     };
 }
 
@@ -108,7 +109,11 @@ function validateExperienceExtraction(experienceData, sourceText, warnings, erro
         valid: errors.length === 0,
         warnings: warnings,
         errors: errors,
-        extractedCount: experienceData.experience.length
+        extractedCount: experienceData.experience.length,
+        filteredData: {
+            ...experienceData,
+            experience: experienceData.experience.filter(exp => !exp.role || isFuzzyMatch(exp.role, sourceText))
+        }
     };
 }
 

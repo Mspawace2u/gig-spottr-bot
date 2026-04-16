@@ -39,8 +39,9 @@ export async function onboardUser(email, cvText) {
             throw new Error(`Skills validation failed: ${skillsValidation.errors.join(', ')}`);
         }
 
+        const filteredSkills = skillsValidation.filteredData;
         if (skillsValidation.warnings.length > 0) {
-            console.warn('  ⚠️ Warnings:', skillsValidation.warnings);
+            console.warn('  ⚠️ Warnings (Hallucinations dropped):', skillsValidation.warnings);
         }
 
         // Step 3: Translator extracts experience
@@ -55,17 +56,17 @@ export async function onboardUser(email, cvText) {
             throw new Error(`Experience validation failed: ${experienceValidation.errors.join(', ')}`);
         }
 
+        const filteredExperience = experienceValidation.filteredData;
         if (experienceValidation.warnings.length > 0) {
-            console.warn('  ⚠️ Warnings:', experienceValidation.warnings);
+            console.warn('  ⚠️ Warnings (Hallucinations dropped):', experienceValidation.warnings);
         }
 
         // Step 5: Courier saves to Notion
-        console.log('  → Courier: Saving to Notion...');
         const cvData = {
             original: cvText,
-            skills: skills,
-            experience: experienceData.experience,
-            totalYears: experienceData.totalYears
+            skills: filteredSkills,
+            experience: filteredExperience.experience,
+            totalYears: filteredExperience.totalYears
         };
 
         await saveUserCvToNotion(email, cvData);
