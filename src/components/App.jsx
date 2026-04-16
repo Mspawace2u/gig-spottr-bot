@@ -580,7 +580,7 @@ function DashboardListing({ report, status, onUpdate }) {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/5 flex flex-wrap gap-x-6 gap-y-4 justify-start">
+              <div className="pt-4 border-t border-white/5 flex gap-4 justify-between w-full">
                 {['FIT', 'NO FIT', 'APPLY', 'DECLINE'].map(status => (
                   status.toUpperCase() !== report.userDecision.toUpperCase() && (
                     <button
