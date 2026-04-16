@@ -32,7 +32,7 @@ export async function extractCvSkills(cvText) {
 
                 const response = await callLLM(prompt, {
                     provider: 'gemini',
-                    model: 'gemini-2.0-pro-exp-02-05',
+                    model: 'gemini-1.5-pro',
                     temperature: 0.3,
                     responseSchema: {
                         type: 'OBJECT',

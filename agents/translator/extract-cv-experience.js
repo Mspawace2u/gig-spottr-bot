@@ -31,7 +31,7 @@ export async function extractCvExperience(cvText) {
                 const prompt = spottrConfig.prompts.extractCvExperience + chunk;
                 const response = await callLLM(prompt, {
                     provider: 'gemini',
-                    model: 'gemini-2.0-pro-exp-02-05', // High capacity Pro model
+                    model: 'gemini-1.5-pro', // High capacity Pro model
                     temperature: 0.1, // Lower temp for factual accuracy
                     responseSchema: {
                         type: "OBJECT",
