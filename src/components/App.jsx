@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { 
-  Rocket, Target, CheckCircle, AlertTriangle, 
-  Upload, LayoutDashboard, PlusSquare as PlusCircle, 
+import {
+  Rocket, Target, CheckCircle, AlertTriangle,
+  Upload, LayoutDashboard, PlusSquare as PlusCircle,
   ChevronDown, ChevronUp, Home, MapPin
 } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export default function App() {
   const [email, setEmail] = useState(() => {
     return (typeof window !== 'undefined' && localStorage.getItem('gig-spottr-email')) || '';
   });
-  
+
   const [inputMode, setInputMode] = useState(() => {
     return (typeof window !== 'undefined' && localStorage.getItem('gig-spottr-input-mode')) || 'text';
   });
@@ -41,16 +41,16 @@ export default function App() {
   const [cvLink, setCvLink] = useState('');
   const [cvFile, setCvFile] = useState(null);
   const fileInputRef = useRef(null);
-  
+
   const [jobUrl, setJobUrl] = useState('');
   const [jobText, setJobText] = useState('');
-  
+
   const [reportData, setReportData] = useState(null);
   const [dashboardData, setDashboardData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastDecision, setLastDecision] = useState('');
-  
+
   // Persistence logic: Save to localStorage on change
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -100,8 +100,8 @@ export default function App() {
 
       const response = await fetch('/api/onboard', { method: 'POST', body: formData });
       if (!response.ok) {
-         const errData = await response.json().catch(() => ({}));
-         throw new Error(errData.error || 'Failed to onboard');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to onboard');
       }
       setStep('ANALYZE');
     } catch (err) {
@@ -130,8 +130,8 @@ export default function App() {
         body: JSON.stringify({ email, jobText, jobUrl })
       });
       if (!response.ok) {
-         const errData = await response.json().catch(() => ({}));
-         throw new Error(errData.error || 'Failed to analyze job');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to analyze job');
       }
       const data = await response.json();
       setReportData(data);
@@ -160,7 +160,7 @@ export default function App() {
       });
       setLastDecision(decision);
       if (decision === 'Applied') fireConfetti();
-      setJobText(''); setJobUrl(''); 
+      setJobText(''); setJobUrl('');
       setStep('SUCCESS');
     } catch (error) {
       setError('Failed to update status. Try again.');
@@ -176,15 +176,15 @@ export default function App() {
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
 
     const sortOldestAndScore = (a, b) => {
-        // Normalize to day level for primary sort
-        const dateA = new Date(a.createdAt).setHours(0, 0, 0, 0);
-        const dateB = new Date(b.createdAt).setHours(0, 0, 0, 0);
-        
-        // Primary: Oldest Day first
-        if (dateA - dateB !== 0) return dateA - dateB;
-        
-        // Secondary: Highest score first (within that day)
-        return (b.skillsMatchPercent || 0) - (a.skillsMatchPercent || 0);
+      // Normalize to day level for primary sort
+      const dateA = new Date(a.createdAt).setHours(0, 0, 0, 0);
+      const dateB = new Date(b.createdAt).setHours(0, 0, 0, 0);
+
+      // Primary: Oldest Day first
+      if (dateA - dateB !== 0) return dateA - dateB;
+
+      // Secondary: Highest score first (within that day)
+      return (b.skillsMatchPercent || 0) - (a.skillsMatchPercent || 0);
     };
 
     const sortOldestOnly = (a, b) => new Date(a.createdAt) - new Date(b.createdAt);
@@ -211,42 +211,43 @@ export default function App() {
   return (
     <div className="relative w-full min-h-screen flex flex-col">
       {/* Sticky Header Bar */}
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }} 
-        animate={{ y: 0, opacity: 1 }} 
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-50 w-full bg-brand-bg/80 backdrop-blur-md border-b border-white/5"
       >
         <div className="max-w-3xl mx-auto px-6 py-6 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-                <div className="w-9 h-9 flex items-center justify-center">
-                   <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
-                </div>
-               <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 flex items-center justify-center">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
             </div>
-            
-            <div className="flex items-center gap-2">
-               <button onClick={() => setStep('ONBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'ONBOARD' ? 'text-brand-primary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-                  <Home size={18} />
-               </button>
-               <button onClick={() => setStep('DASHBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'DASHBOARD' ? 'text-brand-secondary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-                  <LayoutDashboard size={18} />
-               </button>
-               <button 
-                 onClick={() => { 
-                   setStep('ANALYZE'); 
-                   setReportData(null); 
-                   setJobUrl(''); 
-                   setJobText(''); 
-                 }} 
-                 className="p-2.5 rounded-xl text-white/40 hover:text-white border border-transparent hover:border-white/10 transition-all"
-               >
-                  <PlusCircle size={18} />
-               </button>
-            </div>
+            <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button onClick={() => setStep('ONBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'ONBOARD' ? 'text-brand-primary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
+              <Home size={18} />
+            </button>
+            <button onClick={() => setStep('DASHBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'DASHBOARD' ? 'text-brand-secondary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
+              <LayoutDashboard size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setStep('ANALYZE');
+                setReportData(null);
+                setJobUrl('');
+                setJobText('');
+              }}
+              className="p-2.5 rounded-xl text-white/40 hover:text-white border border-transparent hover:border-white/10 transition-all"
+            >
+              <PlusCircle size={18} />
+            </button>
+          </div>
         </div>
       </motion.div>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
+        <AnimatePresence mode="wait">
         {step === 'ONBOARD' && (
           <motion.div key="onboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
             <motion.div variants={fadeInUp} className="mb-10 text-left">
@@ -257,19 +258,19 @@ export default function App() {
               <Card>
                 <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 1: Ingestion</h1>
                 <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-2">Target Email</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-primary placeholder:text-white/10"
-                  placeholder="name@agency.com" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
+                  placeholder="name@agency.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
                 />
                 <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-3">CV Resource</label>
                 <div className="flex gap-2 mb-6">
                   {['text', 'file', 'link'].map(mode => (
-                    <button 
+                    <button
                       key={mode}
-                      onClick={() => setInputMode(mode)} 
+                      onClick={() => setInputMode(mode)}
                       className={`flex-1 flex gap-2 justify-center items-center py-3 rounded-xl border text-[10px] font-bold tracking-widest transition-all ${inputMode === mode ? 'bg-brand-primary border-brand-primary text-black' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
                     >
                       {mode.toUpperCase()}
@@ -280,16 +281,16 @@ export default function App() {
                 {inputMode === 'text' && (
                   <textarea className="w-full bg-brand-bg/80 border border-white/10 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-primary transition-all placeholder:text-white/10" placeholder="Paste resume text..." value={cvText} onChange={e => setCvText(e.target.value)} />
                 )}
-                
+
                 {inputMode === 'link' && (
                   <input type="url" className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-4 focus:outline-none focus:border-brand-tertiary transition-all placeholder:text-white/10" placeholder="https://linkedin.com/in/you" value={cvLink} onChange={e => setCvLink(e.target.value)} />
                 )}
-                
+
                 {inputMode === 'file' && (
                   <div className="w-full bg-brand-bg/50 border border-white/10 hover:border-brand-secondary rounded-2xl p-8 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all" onClick={() => fileInputRef.current?.click()}>
-                      <input type="file" className="hidden" ref={fileInputRef} accept=".pdf,.txt" onChange={e => setCvFile(e.target.files[0])} />
-                      <Upload size={24} className="text-brand-secondary mb-3 opacity-50" />
-                      <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">{cvFile ? cvFile.name : 'Drop PDF Resume'}</span>
+                    <input type="file" className="hidden" ref={fileInputRef} accept=".pdf,.txt" onChange={e => setCvFile(e.target.files[0])} />
+                    <Upload size={24} className="text-brand-secondary mb-3 opacity-50" />
+                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">{cvFile ? cvFile.name : 'Drop PDF Resume'}</span>
                   </div>
                 )}
                 <Button onClick={handleOnboard} loading={loading}>
@@ -312,23 +313,23 @@ export default function App() {
               <Card>
                 <h1 className="text-xs font-bold tracking-[0.2em] text-brand-secondary mb-6 uppercase">Phase 2: Scrape & Scan</h1>
                 <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-2">Job URL (Auto-Scrape)</label>
-                <input 
-                  type="url" 
+                <input
+                  type="url"
                   className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-secondary placeholder:text-white/10"
-                  placeholder="https://ashbyhq.com/..." 
-                  value={jobUrl} 
-                  onChange={e => setJobUrl(e.target.value)} 
+                  placeholder="https://ashbyhq.com/..."
+                  value={jobUrl}
+                  onChange={e => setJobUrl(e.target.value)}
                 />
                 <div className="relative flex items-center mb-6">
                   <div className="flex-grow border-t border-white/5"></div>
                   <span className="flex-shrink mx-4 text-[10px] font-black opacity-20 tracking-widest">OR PASTE RAW</span>
                   <div className="flex-grow border-t border-white/5"></div>
                 </div>
-                <textarea 
+                <textarea
                   className="w-full bg-brand-bg/80 border border-white/10 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-secondary transition-all placeholder:text-white/10"
-                  placeholder="Paste job description..." 
-                  value={jobText} 
-                  onChange={e => setJobText(e.target.value)} 
+                  placeholder="Paste job description..."
+                  value={jobText}
+                  onChange={e => setJobText(e.target.value)}
                 />
                 <Button onClick={handleAnalyze} loading={loading}>
                   {loading ? 'Analyzing Fit' : 'Analyze Fit'}
@@ -346,16 +347,16 @@ export default function App() {
               <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Match Audit</h1>
               <h2 className="text-brand-tertiary text-lg">Structural Probability Report</h2>
             </motion.div>
-            
+
             <motion.div variants={fadeInUp}>
               <Card>
-                  <div className="text-center mb-6">
-                      <div className="text-6xl font-black text-brand-primary mb-2 tabular-nums">{reportData.skillsMatch?.score || 0}%</div>
-                      <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-30">Fit Probability</div>
-                  </div>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${reportData.skillsMatch?.score || 0}%` }} transition={{ duration: 1.5, ease: 'easeOut' }} className="h-full bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary rounded-full" />
-                  </div>
+                <div className="text-center mb-6">
+                  <div className="text-6xl font-black text-brand-primary mb-2 tabular-nums">{reportData.skillsMatch?.score || 0}%</div>
+                  <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-30">Fit Probability</div>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${reportData.skillsMatch?.score || 0}%` }} transition={{ duration: 1.5, ease: 'easeOut' }} className="h-full bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary rounded-full" />
+                </div>
               </Card>
             </motion.div>
 
@@ -383,222 +384,222 @@ export default function App() {
             </motion.div>
 
             <motion.div variants={fadeInUp} className="mt-8 flex flex-col gap-3">
-               <Button onClick={() => handleDecision('Applied')} loading={loading}>
-                 {loading ? 'Marking Applied' : 'Confirm Application'}
-               </Button>
-               <button onClick={() => handleDecision('Skipped')} disabled={loading} className="w-full text-[10px] font-black uppercase tracking-[0.3em] py-4 text-white/20 hover:text-white transition-all">Abort Search</button>
+              <Button onClick={() => handleDecision('Applied')} loading={loading}>
+                {loading ? 'Marking Applied' : 'Confirm Application'}
+              </Button>
+              <button onClick={() => handleDecision('Skipped')} disabled={loading} className="w-full text-[10px] font-black uppercase tracking-[0.3em] py-4 text-white/20 hover:text-white transition-all">Abort Search</button>
             </motion.div>
           </motion.div>
         )}
 
         {step === 'SUCCESS' && (
-            <motion.div key="success" variants={fadeInUp} initial="hidden" animate="visible" exit="exit" className="w-full h-[70vh] flex flex-col items-center justify-center text-center">
-                <div className="w-24 h-24 bg-brand-secondary/20 rounded-full flex items-center justify-center mb-8 border border-brand-secondary/30 ring-8 ring-brand-secondary/5">
-                    <CheckCircle size={48} className="text-brand-secondary" />
-                </div>
-                <h1 className="text-4xl font-black tracking-tighter mb-4">Move Locked.</h1>
-                <p className="text-white/50 text-sm mb-10 max-w-[280px] leading-relaxed">
-                    {lastDecision === 'Applied' 
-                        ? "Your move has been recorded. The Notion courier is currently syncing your pipeline." 
-                        : "Log updated. Aborting this pursuit and clearing search fields."}
-                </p>
-                <div className="flex flex-col w-full gap-4">
-                    <Button onClick={() => { setStep('ANALYZE'); setReportData(null); }}>
-                        ANALYZE NEXT JOB
-                    </Button>
-                    <button onClick={() => setStep('DASHBOARD')} className="text-[10px] uppercase font-black tracking-widest text-white/30 hover:text-brand-secondary transition-all">
-                        View Progress Dashboard
-                    </button>
-                </div>
-            </motion.div>
+          <motion.div key="success" variants={fadeInUp} initial="hidden" animate="visible" exit="exit" className="w-full h-[70vh] flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 bg-brand-secondary/20 rounded-full flex items-center justify-center mb-8 border border-brand-secondary/30 ring-8 ring-brand-secondary/5">
+              <CheckCircle size={48} className="text-brand-secondary" />
+            </div>
+            <h1 className="text-4xl font-black tracking-tighter mb-4">Move Locked.</h1>
+            <p className="text-white/50 text-sm mb-10 max-w-[280px] leading-relaxed">
+              {lastDecision === 'Applied'
+                ? "Your move has been recorded. The Notion courier is currently syncing your pipeline."
+                : "Log updated. Aborting this pursuit and clearing search fields."}
+            </p>
+            <div className="flex flex-col w-full gap-4">
+              <Button onClick={() => { setStep('ANALYZE'); setReportData(null); }}>
+                ANALYZE NEXT JOB
+              </Button>
+              <button onClick={() => setStep('DASHBOARD')} className="text-[10px] uppercase font-black tracking-widest text-white/30 hover:text-brand-secondary transition-all">
+                View Progress Dashboard
+              </button>
+            </div>
+          </motion.div>
         )}
 
         {step === 'DASHBOARD' && (
-            <motion.div key="dashboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
-                <div className="mb-10 text-left">
-                    <h1 className="text-4xl font-black mb-2 tracking-tighter">Progress Log</h1>
-                    <h2 className="text-brand-secondary text-lg">Pipeline Status</h2>
-                </div>
+          <motion.div key="dashboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
+            <div className="mb-10 text-left">
+              <h1 className="text-4xl font-black mb-2 tracking-tighter">Progress Log</h1>
+              <h2 className="text-brand-secondary text-lg">Pipeline Status</h2>
+            </div>
 
-                <div className="flex flex-col gap-4 pb-20">
-                    {Object.entries(buckets).map(([key, list], idx) => {
-                        const categoryTitles = {
-                            analyzed: 'Analyzed',
-                            isFit: 'Fit',
-                            notFit: 'No Fit',
-                            applied: 'Apply',
-                            declined: 'Decline'
-                        };
-                        return (
-                            <DashboardCategory 
-                                key={key} 
-                                title={categoryTitles[key] || key} 
-                                items={list} 
-                                idx={idx}
-                                status={key}
-                                onStatusChange={fetchDashboard}
-                            />
-                        );
-                    })}
-                </div>
-            </motion.div>
+            <div className="flex flex-col gap-4 pb-20">
+              {Object.entries(buckets).map(([key, list], idx) => {
+                const categoryTitles = {
+                  analyzed: 'Analyzed',
+                  isFit: 'Fit',
+                  notFit: 'No Fit',
+                  applied: 'Apply',
+                  declined: 'Decline'
+                };
+                return (
+                  <DashboardCategory
+                    key={key}
+                    title={categoryTitles[key] || key}
+                    items={list}
+                    idx={idx}
+                    status={key}
+                    onStatusChange={fetchDashboard}
+                  />
+                );
+              })}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-      </main>
-    </div>
+    </main>
+    </div >
   );
 }
 
 function DashboardCategory({ title, items, idx, status, onStatusChange }) {
-    const [expanded, setExpanded] = useState(false);
-    
-    return (
-        <Card className={`transition-all ${expanded ? 'h-auto pb-12' : 'h-auto'} overflow-hidden relative pt-10 pb-16`}>
-            <div className="flex justify-between items-start cursor-pointer px-2" onClick={() => setExpanded(!expanded)}>
-                <div className="flex flex-col gap-2">
-                    <h3 className="leading-none">{title}</h3>
-                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.25em]">{items.length} LOGS</p>
-                </div>
-                <div className={`toggle-circle ${expanded ? 'active' : ''} -mt-2 transition-all duration-500`}>
-                    {expanded ? <ChevronUp size={20} strokeWidth={3} /> : <ChevronDown size={20} strokeWidth={3} />}
-                </div>
-            </div>
+  const [expanded, setExpanded] = useState(false);
 
-            <AnimatePresence>
-                {expanded && (
-                    <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="mt-4 pt-4 border-t border-white/5 dashboard-list-container space-y-2 pr-2"
-                    >
-                        {items.length === 0 ? (
-                            <p className="text-[10px] font-black opacity-20 text-center py-8 tracking-widest">STILL HUNTING...</p>
-                        ) : (
-                            items.map((report) => (
-                                <DashboardListing 
-                                    key={report.id} 
-                                    report={report} 
-                                    status={status}
-                                    onUpdate={onStatusChange}
-                                />
-                            ))
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </Card>
-    );
+  return (
+    <Card className={`transition-all ${expanded ? 'h-auto pb-12' : 'h-auto'} overflow-hidden relative pt-10 pb-16`}>
+      <div className="flex justify-between items-start cursor-pointer px-2" onClick={() => setExpanded(!expanded)}>
+        <div className="flex flex-col gap-2">
+          <h3 className="leading-none">{title}</h3>
+          <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.25em]">{items.length} LOGS</p>
+        </div>
+        <div className={`toggle-circle ${expanded ? 'active' : ''} -mt-2 transition-all duration-500`}>
+          {expanded ? <ChevronUp size={20} strokeWidth={3} /> : <ChevronDown size={20} strokeWidth={3} />}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mt-4 pt-4 border-t border-white/5 dashboard-list-container space-y-2 pr-2"
+          >
+            {items.length === 0 ? (
+              <p className="text-[10px] font-black opacity-20 text-center py-8 tracking-widest">STILL HUNTING...</p>
+            ) : (
+              items.map((report) => (
+                <DashboardListing
+                  key={report.id}
+                  report={report}
+                  status={status}
+                  onUpdate={onStatusChange}
+                />
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
 }
 
 function DashboardListing({ report, status, onUpdate }) {
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    const handleMove = async (newStatus) => {
-        setLoading(true);
-        try {
-            await fetch('/api/update-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reportId: report.id, decision: newStatus })
-            });
-            onUpdate();
-        } catch (err) {
-            console.error('Failed to move:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (status === 'analyzed') {
-        const Content = () => (
-            <div className={`flex justify-between items-center py-2 px-4 transition-all group ${report.jobUrl ? 'cursor-pointer' : 'opacity-60'}`}>
-                <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                    <span className={`transition-colors ${report.jobUrl ? 'text-white/80 group-hover:text-brand-primary' : 'text-white/80'}`}>{report.jobTitle}</span>
-                    {report.company && !['UNKNOWN', 'Unknown', 'Unknown Company'].includes(report.company) && (
-                        <>
-                            <span className="mx-2 opacity-10">|</span>
-                            <span className="text-white/40">{report.company}</span>
-                        </>
-                    )}
-                    <span className="mx-2 opacity-10">|</span>
-                    <span className="text-white/10 transition-colors">{new Date(report.createdAt).toLocaleDateString()}</span>
-                </div>
-            </div>
-        );
-
-        return report.jobUrl ? (
-            <a href={report.jobUrl} target="_blank" rel="noopener noreferrer" className="block hover:bg-white/[0.02] rounded-lg transition-all">
-                <Content />
-            </a>
-        ) : <Content />;
+  const handleMove = async (newStatus) => {
+    setLoading(true);
+    try {
+      await fetch('/api/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId: report.id, decision: newStatus })
+      });
+      onUpdate();
+    } catch (err) {
+      console.error('Failed to move:', err);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return (
-        <div className="group">
-            <div 
-                onClick={() => setOpen(!open)}
-                className={`flex justify-between items-center py-4 px-4 rounded-xl border border-white/5 hover:bg-white/[0.02] cursor-pointer transition-all ${open ? 'bg-white/[0.03] border-brand-secondary/30' : ''}`}
-            >
-                <div className="flex flex-col gap-1 max-w-[75%]">
-                    <span className="text-[11px] font-black tracking-tight text-white/90 group-hover:text-brand-primary transition-colors uppercase leading-tight">{report.jobTitle}</span>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{report.company || 'Unknown'}</span>
-                        <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">•</span>
-                        <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{new Date(report.createdAt).toLocaleDateString()}</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                    <span className="text-[10px] font-black text-brand-secondary tabular-nums opacity-60">
-                        {report.skillsMatchPercent}%
-                    </span>
-                    <div className="opacity-20 group-hover:opacity-100 transition-opacity">
-                        <ChevronDown size={14} className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
-                    </div>
-                </div>
-            </div>
-
-            <AnimatePresence>
-                {open && (
-                    <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="p-6 bg-white/[0.01] rounded-b-xl border-x border-b border-white/5 space-y-6">
-                            <div className="flex gap-12">
-                                <div>
-                                    <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Fit Analysis</p>
-                                    <h4 className="text-3xl font-black text-brand-primary tabular-nums">{report.skillsMatchPercent}%</h4>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-3">Top Strength</p>
-                                    <p className="text-[10px] opacity-60 italic leading-relaxed">"{report.strengths?.[0] || 'Strategic alignment detected.'}"</p>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-white/5 flex flex-wrap gap-x-6 gap-y-4 justify-start">
-                                {['FIT', 'NO FIT', 'APPLY', 'DECLINE'].map(status => (
-                                    status.toUpperCase() !== report.userDecision.toUpperCase() && (
-                                        <button 
-                                            key={status}
-                                            disabled={loading}
-                                            onClick={(e) => { e.stopPropagation(); handleMove(status); }}
-                                            className="group/btn transition-all flex items-center gap-2 cursor-pointer"
-                                        >
-                                            <MapPin size={10} className="text-brand-tertiary" />
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-white/40 group-hover/btn:text-brand-primary transition-colors">{status}</span>
-                                        </button>
-                                    )
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+  if (status === 'analyzed') {
+    const Content = () => (
+      <div className={`flex justify-between items-center py-2 px-4 transition-all group ${report.jobUrl ? 'cursor-pointer' : 'opacity-60'}`}>
+        <div className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+          <span className={`transition-colors ${report.jobUrl ? 'text-white/80 group-hover:text-brand-primary' : 'text-white/80'}`}>{report.jobTitle}</span>
+          {report.company && !['UNKNOWN', 'Unknown', 'Unknown Company'].includes(report.company) && (
+            <>
+              <span className="mx-2 opacity-10">|</span>
+              <span className="text-white/40">{report.company}</span>
+            </>
+          )}
+          <span className="mx-2 opacity-10">|</span>
+          <span className="text-white/10 transition-colors">{new Date(report.createdAt).toLocaleDateString()}</span>
         </div>
+      </div>
     );
+
+    return report.jobUrl ? (
+      <a href={report.jobUrl} target="_blank" rel="noopener noreferrer" className="block hover:bg-white/[0.02] rounded-lg transition-all">
+        <Content />
+      </a>
+    ) : <Content />;
+  }
+
+  return (
+    <div className="group">
+      <div
+        onClick={() => setOpen(!open)}
+        className={`flex justify-between items-center py-4 px-4 rounded-xl border border-white/5 hover:bg-white/[0.02] cursor-pointer transition-all ${open ? 'bg-white/[0.03] border-brand-secondary/30' : ''}`}
+      >
+        <div className="flex flex-col gap-1 max-w-[75%]">
+          <span className="text-[11px] font-black tracking-tight text-white/90 group-hover:text-brand-primary transition-colors uppercase leading-tight">{report.jobTitle}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{report.company || 'Unknown'}</span>
+            <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">•</span>
+            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{new Date(report.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <span className="text-[10px] font-black text-brand-secondary tabular-nums opacity-60">
+            {report.skillsMatchPercent}%
+          </span>
+          <div className="opacity-20 group-hover:opacity-100 transition-opacity">
+            <ChevronDown size={14} className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 bg-white/[0.01] rounded-b-xl border-x border-b border-white/5 space-y-6">
+              <div className="flex gap-12">
+                <div>
+                  <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Fit Analysis</p>
+                  <h4 className="text-3xl font-black text-brand-primary tabular-nums">{report.skillsMatchPercent}%</h4>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-3">Top Strength</p>
+                  <p className="text-[10px] opacity-60 italic leading-relaxed">"{report.strengths?.[0] || 'Strategic alignment detected.'}"</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex flex-wrap gap-x-6 gap-y-4 justify-start">
+                {['FIT', 'NO FIT', 'APPLY', 'DECLINE'].map(status => (
+                  status.toUpperCase() !== report.userDecision.toUpperCase() && (
+                    <button
+                      key={status}
+                      disabled={loading}
+                      onClick={(e) => { e.stopPropagation(); handleMove(status); }}
+                      className="group/btn transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <MapPin size={10} className="text-brand-tertiary" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-white/40 group-hover/btn:text-brand-primary transition-colors">{status}</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
