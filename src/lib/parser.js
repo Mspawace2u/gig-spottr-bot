@@ -1,10 +1,7 @@
 import * as cheerio from 'cheerio';
-import * as pdfjs from 'pdfjs-dist';
-
-// Configure pdfjs to work in a server environment without a worker
-if (typeof window === 'undefined') {
-    pdfjs.GlobalWorkerOptions.workerSrc = false;
-}
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 
 export async function parseUrl(url) {
     try {
@@ -112,20 +109,8 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const loadingTask = pdfjs.getDocument({ 
-                data: new Uint8Array(buffer),
-                useSystemFonts: true,
-                disableFontFace: true,
-                verbosity: 0
-            });
-            const pdf = await loadingTask.promise;
-            let fullText = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                fullText += content.items.map(item => item.str).join(' ') + '\n';
-            }
-            return fullText;
+            const data = await pdf(buffer);
+            return data.text;
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');
         } else {
