@@ -16,7 +16,7 @@ export async function extractCvExperience(cvText) {
 
     try {
         // Chunk the CV to ensure the output for any one chunk stays under token limits
-        const CHUNK_SIZE = 10000;
+        const CHUNK_SIZE = 4000;
         const chunks = [];
 
         for (let i = 0; i < cvText.length; i += CHUNK_SIZE) {
@@ -31,7 +31,7 @@ export async function extractCvExperience(cvText) {
                 const prompt = spottrConfig.prompts.extractCvExperience + chunk;
                 const response = await callLLM(prompt, {
                     provider: 'gemini',
-                    model: 'gemini-1.5-pro', // High capacity Pro model
+                    model: 'gemini-2.5-flash',
                     temperature: 0.1, // Lower temp for factual accuracy
                     responseSchema: {
                         type: "OBJECT",

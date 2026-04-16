@@ -16,7 +16,7 @@ export async function extractCvSkills(cvText) {
 
     try {
         // Chunk the CV to handle large files (avoiding output token limits)
-        const CHUNK_SIZE = 5000;
+        const CHUNK_SIZE = 2000;
         const chunks = [];
 
         for (let i = 0; i < cvText.length; i += CHUNK_SIZE) {
@@ -32,7 +32,7 @@ export async function extractCvSkills(cvText) {
 
                 const response = await callLLM(prompt, {
                     provider: 'gemini',
-                    model: 'gemini-1.5-pro',
+                    model: 'gemini-2.5-flash',
                     temperature: 0.3,
                     responseSchema: {
                         type: 'OBJECT',
