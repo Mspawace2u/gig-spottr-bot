@@ -11,23 +11,23 @@ export const spottrConfig = {
   prompts: {
     extractCvSkills: `You are extracting skills from a resume. Focus on ACCURACY and resume structure.
  
-Your task:
-1. Identify dedicated "Professional Skills", "Technical Skills", or "Core Competencies" sections. Extract these as PRIMARY skills.
-2. Scan "Experience" or "Professional History" bullet points ONLY for unique contextual skills that aren't already listed in the core sections.
-3. DO NOT turn every sentence into a skill. Focus on high-impact keywords (e.g., "GTM Strategy", "CRM", "Revenue Ops").
-4. If the resume is very dense, prioritize the most relevant top 40-50 skills to avoid truncation.
-5. Include proficiency level if explicitly stated.
-6. Include years of experience if explicitly stated near the skill.
+ Your task:
+ 1. Identify dedicated "Professional Skills", "Technical Skills", or "Core Competencies" sections. Extract these as PRIMARY skills.
+ 2. Scan "Experience" or "Professional History" bullet points ONLY for unique contextual skills that aren't already listed in the core sections.
+ 3. DO NOT turn every sentence into a skill. Focus on high-impact keywords (e.g., "GTM Strategy", "CRM", "Revenue Ops").
+ 4. If the resume is very dense, prioritize the most relevant top 40-50 skills to avoid truncation.
+ 5. Include proficiency level if explicitly stated.
+ 6. Include years of experience if explicitly stated near the skill.
  
-Return your response as valid JSON in this format:
-{
-  "skills": [
-    { "name": "skill name", "proficiency": "level", "years": number }
-  ]
-}
+ Return your response as valid JSON in this format:
+ {
+   "skills": [
+     { "name": "skill name", "proficiency": "level", "years": number }
+   ]
+ }
  
-Resume Text:
-`,
+ Resume Text:
+ `,
 
     // Translator Agent: Extract experience from CV
     extractCvExperience: `You are extracting work experience from a CV/resume.
@@ -63,14 +63,17 @@ CV Text:
  STEP 1: Extract Job Title and Company.
  - Scan for explicit labels like "Company:", "Employer:", or "About [Company Name]".
  - COMPANY NAME EXTRACTION: Look closely at the top and bottom of the posting. Identify the employer from signatures, trademark notices, or descriptions of the workplace culture.
- - If a CONTEXT (URL or TITLE HINT) is provided, use it as a strong anchor. For example, a "nvent.wd5.myworkdayjobs.com" URL means the company is nVent.
+ - If a CONTEXT (URL or TITLE HINT) is provided, use it as a strong anchor.
  
- STEP 2: Extract Requirements.
+ STEP 2: Aggressive Skill Mining.
+ - DO NOT look just for a heading titled "Requirements". Scan the ENTIRE text.
+ - EXHAUSTIVE EXTRACTION: Mine the "Responsibilities", "Daily Tasks", and "What You'll Do" sections for core skills.
+ - If the job says "You will manage a team using CRM", extract "Team Management" and "CRM" as REQUIRED skills.
+ - Aim for a comprehensive list of 10-15 core skills to ensure an accurate fit analysis.
  - Identify REQUIRED skills (must-haves).
  - Identify PREFERRED skills (nice-to-haves).
  - Determine required experience level and years.
  - SENIORITY AWARENESS: If the title is "Principal", "Director", "Lead", or "Head of", ensure you extract relevant core leadership skills (e.g., "Strategic Planning", "GTM Strategy", "Stakeholder Management") if they are even briefly mentioned or implied by the responsibilities.
- - DO NOT assume skills solely by title, but look for the structural keywords that support that level of seniority.
  
  Return your response as valid JSON in this format:
  {
