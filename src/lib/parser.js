@@ -1,6 +1,10 @@
 import * as cheerio from 'cheerio';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+import * as pdfjs from 'pdfjs-dist';
+
+// Configure pdfjs to work in a server environment without a worker
+if (typeof window === 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = false;
+}
 
 export async function parseUrl(url) {
     try {
@@ -108,7 +112,6 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
             const loadingTask = pdfjs.getDocument({ 
                 data: new Uint8Array(buffer),
                 useSystemFonts: true,
