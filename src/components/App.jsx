@@ -214,37 +214,39 @@ export default function App() {
       <motion.div 
         initial={{ y: -20, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
-        className="sticky top-0 z-50 flex justify-between items-center py-6 px-4 mb-4 bg-brand-bg/80 backdrop-blur-md border-b border-white/5"
+        className="sticky top-0 z-50 w-full bg-brand-bg/80 backdrop-blur-md border-b border-white/5"
       >
-          <div className="flex items-center gap-3">
-              <div className="w-9 h-9 flex items-center justify-center">
-                 <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
-              </div>
-             <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-             <button onClick={() => setStep('ONBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'ONBOARD' ? 'text-brand-primary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-                <Home size={18} />
-             </button>
-             <button onClick={() => setStep('DASHBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'DASHBOARD' ? 'text-brand-secondary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-                <LayoutDashboard size={18} />
-             </button>
-             <button 
-               onClick={() => { 
-                 setStep('ANALYZE'); 
-                 setReportData(null); 
-                 setJobUrl(''); 
-                 setJobText(''); 
-               }} 
-               className="p-2.5 rounded-xl text-white/40 hover:text-white border border-transparent hover:border-white/10 transition-all"
-             >
-                <PlusCircle size={18} />
-             </button>
-          </div>
+        <div className="max-w-3xl mx-auto px-6 py-6 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+                <div className="w-9 h-9 flex items-center justify-center">
+                   <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
+                </div>
+               <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
+            </div>
+            
+            <div className="flex items-center gap-2">
+               <button onClick={() => setStep('ONBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'ONBOARD' ? 'text-brand-primary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
+                  <Home size={18} />
+               </button>
+               <button onClick={() => setStep('DASHBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'DASHBOARD' ? 'text-brand-secondary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
+                  <LayoutDashboard size={18} />
+               </button>
+               <button 
+                 onClick={() => { 
+                   setStep('ANALYZE'); 
+                   setReportData(null); 
+                   setJobUrl(''); 
+                   setJobText(''); 
+                 }} 
+                 className="p-2.5 rounded-xl text-white/40 hover:text-white border border-transparent hover:border-white/10 transition-all"
+               >
+                  <PlusCircle size={18} />
+               </button>
+            </div>
+        </div>
       </motion.div>
 
-      <AnimatePresence mode="wait">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
         {step === 'ONBOARD' && (
           <motion.div key="onboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
             <motion.div variants={fadeInUp} className="mb-10 text-left">
@@ -594,8 +596,9 @@ function DashboardListing({ report, status, onUpdate }) {
                         </div>
                     </motion.div>
                 )}
-            </AnimatePresence>
-        </div>
-    );
+      </AnimatePresence>
+      </main>
+    </div>
+  );
 }
 

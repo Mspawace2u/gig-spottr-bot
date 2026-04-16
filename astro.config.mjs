@@ -14,7 +14,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     ssr: {
-      noExternal: ['pdf-parse-fork']
+      noExternal: ['pdfjs-dist']
     }
   }
 });

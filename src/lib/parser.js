@@ -108,9 +108,21 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const pdf = require('pdf-parse-fork');
-            const data = await pdf(buffer);
-            return data.text;
+            const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+            const loadingTask = pdfjs.getDocument({ 
+                data: new Uint8Array(buffer),
+                useSystemFonts: true,
+                disableFontFace: true,
+                verbosity: 0
+            });
+            const pdf = await loadingTask.promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(item => item.str).join(' ') + '\n';
+            }
+            return fullText;
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');
         } else {
