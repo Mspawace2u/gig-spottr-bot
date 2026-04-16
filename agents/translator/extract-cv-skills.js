@@ -16,7 +16,7 @@ export async function extractCvSkills(cvText) {
 
     try {
         // Chunk the CV to handle large files (avoiding output token limits)
-        const CHUNK_SIZE = 2000;
+        const CHUNK_SIZE = 15000;
         const chunks = [];
 
         for (let i = 0; i < cvText.length; i += CHUNK_SIZE) {

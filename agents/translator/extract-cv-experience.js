@@ -15,93 +15,73 @@ export async function extractCvExperience(cvText) {
     }
 
     try {
-        // Chunk the CV to ensure the output for any one chunk stays under token limits
-        const CHUNK_SIZE = 4000;
-        const chunks = [];
+        // Call LLM with extraction prompt
+        const prompt = spottrConfig.prompts.extractCvExperience + cvText;
+        const response = await callLLM(prompt, {
+            provider: 'gemini',
+            model: 'gemini-2.5-flash',
+            temperature: 0.3,
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    experience: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                role: { type: "STRING" },
+                                company: { type: "STRING" },
+                                years: { type: "NUMBER" },
+                                level: { type: "STRING" }
+                            },
+                            required: ["role", "company", "years", "level"]
+                        }
+                    },
+                    totalYears: { type: "NUMBER" }
+                },
+                required: ["experience", "totalYears"]
+            }
+        });
 
-        for (let i = 0; i < cvText.length; i += CHUNK_SIZE) {
-            chunks.push(cvText.slice(i, i + CHUNK_SIZE));
+        // Parse JSON response
+        const data = parseJsonFromLLM(response);
+
+        // Validate structure
+        if (!data.experience || !Array.isArray(data.experience)) {
+            throw new Error('Invalid response structure: missing experience array');
         }
 
-        console.log(`Split CV into ${chunks.length} chunks for experience extraction`);
+        if (typeof data.totalYears !== 'number') {
+            throw new Error('Invalid response structure: missing totalYears');
+        }
 
-        // Process chunks in parallel
-        const chunkPromises = chunks.map(async (chunk, index) => {
-            try {
-                const prompt = spottrConfig.prompts.extractCvExperience + chunk;
-                const response = await callLLM(prompt, {
-                    provider: 'gemini',
-                    model: 'gemini-2.5-flash',
-                    temperature: 0.1, // Lower temp for factual accuracy
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            experience: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        role: { type: "STRING" },
-                                        company: { type: "STRING" },
-                                        years: { type: "NUMBER" },
-                                        level: { type: "STRING" }
-                                    },
-                                    required: ["role", "company", "years", "level"]
-                                }
-                            },
-                            totalYears: { type: "NUMBER" }
-                        },
-                        required: ["experience", "totalYears"]
-                    }
-                });
-
-                const data = typeof response === 'string' ? parseJsonFromLLM(response) : response;
-                return {
-                    experience: data.experience || [],
-                    totalYears: data.totalYears || 0
-                };
-            } catch (err) {
-                console.error(`Error processing experience chunk ${index + 1}:`, err);
-                return { experience: [], totalYears: 0 };
+        // Validate each experience entry
+        const validatedExperience = data.experience.map(exp => {
+            if (!exp.role) {
+                throw new Error('Experience entry missing role property');
             }
+
+            return {
+                role: exp.role.trim(),
+                company: exp.company?.trim() || 'Not specified',
+                years: exp.years || 0,
+                level: exp.level || 'not specified',
+                source: findExperienceInCV(exp.role, cvText) // Track where it came from
+            };
         });
 
-        const results = await Promise.all(chunkPromises);
+        // Programmatic Fallback for Total Years (LLMs are notoriously bad at math/following negative constraints around math)
+        let finalTotalYears = data.totalYears;
 
-        // Aggregate results
-        const allRoles = results.flatMap(r => r.experience);
-        const uniqueRolesMap = new Map();
-
-        allRoles.forEach(exp => {
-            if (exp.role && exp.company) {
-                const key = `${exp.role.toLowerCase()}|${exp.company.toLowerCase()}`;
-                if (!uniqueRolesMap.has(key)) {
-                    uniqueRolesMap.set(key, {
-                        ...exp,
-                        source: findExperienceInCV(exp.role, cvText)
-                    });
-                }
-            }
-        });
-
-        const validatedExperience = Array.from(uniqueRolesMap.values());
-
-        // For total years, take the max found across all chunks (as chunks might have different views)
-        // Or better, look for the explicit pattern in the full text
-        let finalTotalYears = Math.max(...results.map(r => r.totalYears), 0);
-
-        // Programmatic Fallback for Total Years (More reliable for specific formats)
+        // Look for explicit pattern: "TOTAL EXPERIENCE: 25 years" or "**TOTAL EXPERIENCE:** 25"
+        // [^\d]* allows any non-digit characters (like colons, asterisks, spaces) before the digits
         const totalExpMatch = cvText.match(/TOTAL EXPERIENCE[^\d]*(\d+)/i);
         if (totalExpMatch && totalExpMatch[1]) {
             const explicitYears = parseInt(totalExpMatch[1], 10);
             if (!isNaN(explicitYears)) {
-                console.log(`  🔍 Programmatic override: Found explicit 'TOTAL EXPERIENCE' = ${explicitYears} in CV.`);
+                console.log(`  🔍 Programmatic override: Found explicit 'TOTAL EXPERIENCE' = ${explicitYears} in CV, overriding LLM output (${data.totalYears}).`);
                 finalTotalYears = explicitYears;
             }
-        }
-
-        if (validatedExperience.length === 0) {
-            console.warn('⚠️ No experience extracted in any chunk.');
         }
 
         return {
@@ -116,14 +96,16 @@ export async function extractCvExperience(cvText) {
 }
 
 /**
- * Helper: Find where an experience entry is mentioned in the CV
+ * Helper: Find where an experience entry is mentioned in the CV (for source tracking)
  */
 function findExperienceInCV(roleName, cvText) {
     const lines = cvText.split('\n');
+
     for (let i = 0; i < lines.length; i++) {
         if (lines[i].toLowerCase().includes(roleName.toLowerCase())) {
             return `Line ${i + 1}: ${lines[i].trim().substring(0, 100)}...`;
         }
     }
-    return 'Source not found';
+
+    return 'Source not found (possible hallucination)';
 }

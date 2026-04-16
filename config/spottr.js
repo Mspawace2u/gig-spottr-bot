@@ -9,15 +9,15 @@ export const spottrConfig = {
 
   // Prompts for each agent skill
   prompts: {
-    extractCvSkills: `You are extracting skills from a resume. Focus on GROUNDED ACCURACY.
+    extractCvSkills: `You are extracting skills from a resume. Focus on ACCURACY and resume structure.
  
  Your task:
- 1. USE THE USER'S VOCABULARY. Extract skills using the specific terms found in the text.
- 2. DO NOT SUMMARIZE OR INFER. For example, if a bullet describes "managing a team of 5", extract "Team Management". DO NOT extract "Organizational Leadership Strategy" if those words aren't in the text.
- 3. NO HALLUCINATIONS. If a skill isn't explicitly grounded in a specific line of text or a direct synonym, DO NOT extract it.
- 4. Identify dedicated "Professional Skills" or "Technical Skills" sections as PRIMARY sources.
- 5. Scan "Experience" bullet points for unique tools or core activities.
- 6. If the resume is dense, prioritize the most representative top 40-50 skills.
+ 1. Identify dedicated "Professional Skills", "Technical Skills", or "Core Competencies" sections. Extract these as PRIMARY skills.
+ 2. Scan "Experience" or "Professional History" bullet points ONLY for unique contextual skills that aren't already listed in the core sections.
+ 3. DO NOT turn every sentence into a skill. Focus on high-impact keywords (e.g., "GTM Strategy", "CRM", "Revenue Ops").
+ 4. If the resume is very dense, prioritize the most relevant top 40-50 skills to avoid truncation.
+ 5. Include proficiency level if explicitly stated.
+ 6. Include years of experience if explicitly stated near the skill.
  
  Return your response as valid JSON in this format:
  {
@@ -30,25 +30,27 @@ export const spottrConfig = {
  `,
 
     // Translator Agent: Extract experience from CV
-    extractCvExperience: `You are extracting work experience from a CV/resume. Focus on LITERAL EVIDENCE.
+    extractCvExperience: `You are extracting work experience from a CV/resume.
 
 Follow these steps EXACTLY:
 STEP 1: Determine Total Years of Experience.
 - Scan the document for an explicit label like "TOTAL EXPERIENCE: X years".
-- If no explicit label, estimate the career span (earliest job to present).
-- NEVER sum individual durations.
+- If you find this explicit label, set "totalYears" to X and DO NOT calculate it yourself.
+- If (and ONLY if) there is no explicit label, estimate the total career span (the time from their earliest start date to the present).
+- NEVER sum the durations of individual roles together, as people often hold multiple roles simultaneously or overlap (e.g., 15 years + 17 years + 13 years does NOT equal 45 years total experience).
 
-STEP 2: Extract individual roles.
-- Use explicit job titles and company names.
-- DO NOT infer higher seniority levels (e.g., don't turn "Manager" into "Director") unless explicitly stated.
-- If a role is not in the text, DO NOT invent it.
+STEP 2: Extract each individual role.
+- Extract all job titles, companies, and duration for each role.
+- Determine the experience level for each role (junior/mid/senior/lead/principal).
+- DO NOT invent roles or companies not mentioned.
+- DO NOT inflate experience levels.
 
 Return your response as valid JSON in this format:
 {
   "experience": [
     { "role": "job title", "company": "company name", "years": number, "level": "junior|mid|senior|lead|principal" }
   ],
-  "totalYears": number
+  "totalYears": number (from explicit label, OR career span estimate)
 }
 
 CV Text:
