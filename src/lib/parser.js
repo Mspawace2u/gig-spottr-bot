@@ -108,9 +108,8 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const { PDFParse } = require('pdf-parse');
-            const parser = new PDFParse({ data: buffer });
-            const data = await parser.getText();
+            const pdf = require('pdf-parse-fork');
+            const data = await pdf(buffer);
             return data.text;
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');

@@ -217,9 +217,9 @@ export default function App() {
         className="sticky top-0 z-50 flex justify-between items-center py-6 px-4 mb-4 bg-brand-bg/80 backdrop-blur-md border-b border-white/5"
       >
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center">
-                <Rocket size={18} className="text-black" />
-             </div>
+              <div className="w-9 h-9 flex items-center justify-center">
+                 <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
+              </div>
              <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
           </div>
           
