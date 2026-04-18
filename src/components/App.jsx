@@ -551,8 +551,17 @@ function DashboardListing({ report, status, onUpdate }) {
                   <h4 className="text-3xl font-black text-brand-primary tabular-nums">{report.skillsMatchPercent}%</h4>
                 </div>
                 <div className="flex-1">
-                  <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-3">Top Strength</p>
-                  <p className="text-[10px] opacity-60 italic leading-relaxed">"{report.strengths?.[0] || 'Strategic alignment detected.'}"</p>
+                  {status === 'notFit' ? (
+                    <>
+                      <p className="text-[9px] font-black text-brand-primary uppercase tracking-[0.2em] mb-3">Biggest Gap</p>
+                      <p className="text-[10px] opacity-70 leading-relaxed">"{report.weaknesses?.[0] || 'No critical gap identified.'}"</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[9px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-3">Top Strength</p>
+                      <p className="text-[10px] opacity-70 leading-relaxed">"{report.strengths?.[0] || 'Strategic alignment detected.'}"</p>
+                    </>
+                  )}
                 </div>
               </div>
 

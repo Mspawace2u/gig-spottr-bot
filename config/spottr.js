@@ -101,6 +101,7 @@ JOB'S REQUIRED EXPERIENCE: {jobExperience}
 Your task:
 - List 3 - 5 specific STRENGTHS(what the user HAS that matches)
   - List 3 - 5 specific WEAKNESSES(what the user LACKS or falls short on)
+    - Order BOTH arrays from highest-impact to lowest-impact: the first item in each array must be the single most critical strength or weakness for this specific role, with subsequent items decreasing in importance
     - Base your analysis ONLY on the data above
       - DO NOT invent skills or experience not listed
         - DO NOT make assumptions about proficiency levels
