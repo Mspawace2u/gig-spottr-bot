@@ -15,10 +15,71 @@ function decodeHtmlEntities(s) {
         .replace(/&amp;/g, '&');
 }
 
+// Generate candidate ATS board/org slugs from a host URL. Used when the host
+// page is bot-protected (e.g. Cloudflare 202 challenge on stitchfix.com) and
+// we can't read the embed script to discover the slug. Heuristic — the slug
+// often matches the brand's second-level domain (stitchfix.com → stitchfix),
+// but not always (unity.com → unity3d on Greenhouse). We try candidates in
+// order and accept whichever the ATS API returns 200 for.
+function slugCandidatesFromHost(hostname) {
+    const bare = hostname.replace(/^(www|careers|jobs|apply|hire|hiring)\./i, '');
+    const secondLevel = bare.replace(/\.[a-z]+$/i, '');
+    const flat = secondLevel.replace(/[^a-zA-Z0-9_-]/g, '');
+    const candidates = new Set();
+    if (flat) candidates.add(flat.toLowerCase());
+    // Common -digit variants (unity → unity3d, etc.) — cheap to try, 404 is fast.
+    if (flat) {
+        candidates.add(`${flat.toLowerCase()}hq`);
+        candidates.add(`${flat.toLowerCase()}inc`);
+    }
+    return [...candidates];
+}
+
+async function fetchGreenhouseJob(boardSlug, ghJid) {
+    const apiResp = await fetch(`https://boards-api.greenhouse.io/v1/boards/${boardSlug}/jobs/${ghJid}`);
+    if (!apiResp.ok) return null;
+    const data = await apiResp.json();
+    const descText = cheerio.load(decodeHtmlEntities(data.content || '')).text().replace(/\s+/g, ' ').trim();
+    const parts = [
+        data.company_name ? `COMPANY: ${data.company_name}` : '',
+        data.title ? `TITLE: ${data.title}` : '',
+        data.location?.name ? `LOCATION: ${data.location.name}` : '',
+        descText ? `DESCRIPTION: ${descText}` : ''
+    ].filter(Boolean);
+    const text = parts.join(' ').trim();
+    return {
+        directResult: {
+            text,
+            title: (data.title || '').trim(),
+            lowSignal: text.length < 300
+        }
+    };
+}
+
+async function verifyAshbyJob(orgSlug, ashbyJid) {
+    // HEAD request to confirm the org/job combo exists before rewriting.
+    try {
+        const resp = await fetch(`https://jobs.ashbyhq.com/${orgSlug}/${ashbyJid}`, {
+            method: 'HEAD',
+            headers: { 'User-Agent': SCRAPE_USER_AGENT }
+        });
+        return resp.ok;
+    } catch {
+        return false;
+    }
+}
+
 // Some job URLs point at a host page (Squarespace, Webflow, company marketing site)
 // that only embeds a client-side widget (Ashby, Greenhouse) — the actual job content
 // isn't in the HTML. Detect those patterns and resolve to the real job data.
 // Returns either { directResult: {...parseUrl result} } or { rewriteUrl: '...' } or null.
+//
+// Resolution order per ATS:
+//   1. Try to fetch the host HTML and extract the slug from the embed script
+//      (boards.greenhouse.io/embed/job_board/js?for=<slug> or ashbyhq.com/<org>/embed).
+//   2. If host fetch fails (non-OK) or the slug pattern is absent (e.g. host page
+//      is bot-protected and returns a challenge), derive slug candidates from the
+//      URL hostname and probe the ATS API / job URL until one succeeds.
 async function resolveEmbeddedJobBoard(url) {
     try {
         const u = new URL(url);
@@ -27,9 +88,17 @@ async function resolveEmbeddedJobBoard(url) {
         if (!ashbyJid && !ghJid) return null;
         if (u.hostname === 'jobs.ashbyhq.com' || u.hostname.includes('greenhouse.io')) return null;
 
-        const hostResp = await fetch(url, { headers: { 'User-Agent': SCRAPE_USER_AGENT } });
-        if (!hostResp.ok) return null;
-        const hostHtml = await hostResp.text();
+        let hostHtml = '';
+        try {
+            const hostResp = await fetch(url, { headers: { 'User-Agent': SCRAPE_USER_AGENT } });
+            if (hostResp.ok) {
+                hostHtml = await hostResp.text();
+            } else {
+                console.log(`🔗 Host page fetch non-OK (${hostResp.status}); falling back to hostname-derived slug candidates`);
+            }
+        } catch (e) {
+            console.log(`🔗 Host page fetch threw (${e.message}); falling back to hostname-derived slug candidates`);
+        }
 
         if (ashbyJid) {
             const m = hostHtml.match(/ashbyhq\.com\/([a-zA-Z0-9_-]+)\/embed/);
@@ -37,30 +106,28 @@ async function resolveEmbeddedJobBoard(url) {
                 console.log(`🔗 Ashby embed detected — rewriting to direct URL (org: ${m[1]})`);
                 return { rewriteUrl: `https://jobs.ashbyhq.com/${m[1]}/${ashbyJid}` };
             }
+            // Host HTML didn't reveal the org slug. Try candidates derived from hostname.
+            for (const candidate of slugCandidatesFromHost(u.hostname)) {
+                if (await verifyAshbyJob(candidate, ashbyJid)) {
+                    console.log(`🔗 Ashby hostname-slug fallback succeeded (org: ${candidate})`);
+                    return { rewriteUrl: `https://jobs.ashbyhq.com/${candidate}/${ashbyJid}` };
+                }
+            }
         }
 
         if (ghJid) {
             const m = hostHtml.match(/boards\.greenhouse\.io\/embed\/job_board\/js\?for=([a-zA-Z0-9_-]+)/);
             if (m) {
                 console.log(`🔗 Greenhouse embed detected — calling public API (board: ${m[1]}, job: ${ghJid})`);
-                const apiResp = await fetch(`https://boards-api.greenhouse.io/v1/boards/${m[1]}/jobs/${ghJid}`);
-                if (apiResp.ok) {
-                    const data = await apiResp.json();
-                    const descText = cheerio.load(decodeHtmlEntities(data.content || '')).text().replace(/\s+/g, ' ').trim();
-                    const parts = [
-                        data.company_name ? `COMPANY: ${data.company_name}` : '',
-                        data.title ? `TITLE: ${data.title}` : '',
-                        data.location?.name ? `LOCATION: ${data.location.name}` : '',
-                        descText ? `DESCRIPTION: ${descText}` : ''
-                    ].filter(Boolean);
-                    const text = parts.join(' ').trim();
-                    return {
-                        directResult: {
-                            text,
-                            title: (data.title || '').trim(),
-                            lowSignal: text.length < 300
-                        }
-                    };
+                const result = await fetchGreenhouseJob(m[1], ghJid);
+                if (result) return result;
+            }
+            // Host HTML didn't reveal the board slug (or was blocked). Try candidates.
+            for (const candidate of slugCandidatesFromHost(u.hostname)) {
+                const result = await fetchGreenhouseJob(candidate, ghJid);
+                if (result) {
+                    console.log(`🔗 Greenhouse hostname-slug fallback succeeded (board: ${candidate}, job: ${ghJid})`);
+                    return result;
                 }
             }
         }
