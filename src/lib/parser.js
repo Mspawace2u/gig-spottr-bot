@@ -129,7 +129,7 @@ async function resolveEmbeddedJobBoard(url) {
         // Detect a direct Lever URL — no query-param marker, just path shape.
         // Accepts both jobs.lever.co/<org>/<uuid> and api.lever.co/v0/postings/<org>/<uuid>.
         // Captures for later use as primary lever resolver path.
-        const leverDirect = u.hostname.endsWith('lever.co') && (
+        const leverDirect = (u.hostname === 'lever.co' || u.hostname.endsWith('.lever.co')) && (
             u.pathname.match(/^\/(?:v0\/postings\/)?([a-zA-Z0-9_-]+)\/([a-f0-9-]{36})(?:\/|$)/i)
         );
         if (leverDirect) {
