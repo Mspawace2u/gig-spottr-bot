@@ -8,6 +8,7 @@ import {
 
 import Button from './UI/Button';
 import Card from './UI/Card';
+import AppHeader from './UI/AppHeader';
 import confetti from 'canvas-confetti';
 
 const fadeInUp = {
@@ -209,44 +210,19 @@ export default function App() {
   const buckets = getBuckets();
 
   return (
-    <div className="relative w-full min-h-screen flex flex-col">
-      {/* Sticky Header Bar */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 w-full bg-brand-bg/80 backdrop-blur-md border-b border-white/5"
+    <div className="relative w-full min-h-screen min-h-[100dvh] flex flex-col">
+      <AppHeader
+        step={step}
+        setStep={setStep}
+        setReportData={setReportData}
+        setJobUrl={setJobUrl}
+        setJobText={setJobText}
+      />
+
+      <main
+        className="flex-1 w-full max-w-[var(--shell-max-w)] mx-auto px-[var(--shell-pad-x)] pt-8"
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="max-w-3xl mx-auto px-6 py-6 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 flex items-center justify-center">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="Gig Spottr Logo" />
-            </div>
-            <h1 className="text-sm font-black tracking-widest uppercase">Gig Spottr</h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button onClick={() => setStep('ONBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'ONBOARD' ? 'text-brand-primary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-              <Home size={18} />
-            </button>
-            <button onClick={() => setStep('DASHBOARD')} className={`p-2.5 rounded-xl transition-all ${step === 'DASHBOARD' ? 'text-brand-secondary bg-white/5 border border-white/10' : 'text-white/40 hover:text-white'}`}>
-              <LayoutDashboard size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setStep('ANALYZE');
-                setReportData(null);
-                setJobUrl('');
-                setJobText('');
-              }}
-              className="p-2.5 rounded-xl text-white/40 hover:text-white border border-transparent hover:border-white/10 transition-all"
-            >
-              <PlusCircle size={18} />
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">
         <AnimatePresence mode="wait">
         {step === 'ONBOARD' && (
           <motion.div key="onboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
@@ -417,7 +393,7 @@ export default function App() {
         {step === 'DASHBOARD' && (
           <motion.div key="dashboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
             <div className="mb-10 text-left">
-              <h1 className="text-4xl font-black mb-2 tracking-tighter">Progress Log</h1>
+              <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Progress Log</h1>
               <h2 className="text-brand-secondary text-lg">Pipeline Status</h2>
             </div>
 

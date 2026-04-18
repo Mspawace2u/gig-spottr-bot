@@ -6,9 +6,13 @@
   --color-brand-primary: #ff2f92;  /* Punk Rock Pink */
   --color-brand-secondary: #2de2e6; /* Totes Turquoise */
   --color-brand-tertiary: #9b5cff;  /* Electric Purple */
-  
+
   --font-sans: 'Red Hat Display', sans-serif;
   --font-mono: 'Red Hat Mono', monospace;
+
+  /* App shell layout tokens. Header and main MUST share both. */
+  --shell-max-w: 480px;
+  --shell-pad-x: 1.5rem;
 }
 
 @layer base {
@@ -16,6 +20,7 @@
     background-color: var(--color-brand-bg);
     color: #fafafa;
     min-height: 100vh;
+    min-height: 100dvh;
     font-family: var(--font-mono);
     position: relative;
   }
