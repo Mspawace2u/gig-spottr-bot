@@ -35,6 +35,46 @@ function slugCandidatesFromHost(hostname) {
     return [...candidates];
 }
 
+// Turn a Lever API response into the standard directResult shape.
+// Lever's `description` and `descriptionPlain` fields are HTML / plain text;
+// `additional`/`additionalPlain` are post-description commitments and EOE
+// statements which also contain skills/culture signal, so we concatenate.
+// `lists` is an array of section headers with bullet content — these carry
+// the actual qualifications/responsibilities, critical for fit analysis.
+async function fetchLeverJob(orgSlug, jobId) {
+    const apiResp = await fetch(`https://api.lever.co/v0/postings/${orgSlug}/${jobId}`);
+    if (!apiResp.ok) return null;
+    const data = await apiResp.json();
+    const descText = cheerio.load(data.description || '').text().replace(/\s+/g, ' ').trim();
+    const listText = Array.isArray(data.lists)
+        ? data.lists.map(l => {
+            const header = (l.text || '').trim();
+            const body = cheerio.load(l.content || '').text().replace(/\s+/g, ' ').trim();
+            return header && body ? `${header.toUpperCase()}: ${body}` : body;
+        }).filter(Boolean).join(' ')
+        : '';
+    const additional = (data.additionalPlain || '').replace(/\s+/g, ' ').trim();
+    const location = data.categories?.location || '';
+    const team = data.categories?.team || '';
+    const commitment = data.categories?.commitment || '';
+    const parts = [
+        data.categories?.department ? `COMPANY_DEPT: ${data.categories.department}` : '',
+        data.text ? `TITLE: ${data.text}` : '',
+        [location, team, commitment].filter(Boolean).join(' / ') ? `LOCATION: ${[location, team, commitment].filter(Boolean).join(' / ')}` : '',
+        descText ? `DESCRIPTION: ${descText}` : '',
+        listText ? `SECTIONS: ${listText}` : '',
+        additional ? `ADDITIONAL: ${additional}` : ''
+    ].filter(Boolean);
+    const text = parts.join(' ').trim();
+    return {
+        directResult: {
+            text,
+            title: (data.text || '').trim(),
+            lowSignal: text.length < 300
+        }
+    };
+}
+
 async function fetchGreenhouseJob(boardSlug, ghJid) {
     const apiResp = await fetch(`https://boards-api.greenhouse.io/v1/boards/${boardSlug}/jobs/${ghJid}`);
     if (!apiResp.ok) return null;
@@ -85,7 +125,25 @@ async function resolveEmbeddedJobBoard(url) {
         const u = new URL(url);
         const ashbyJid = u.searchParams.get('ashby_jid');
         const ghJid = u.searchParams.get('gh_jid');
-        if (!ashbyJid && !ghJid) return null;
+
+        // Detect a direct Lever URL — no query-param marker, just path shape.
+        // Accepts both jobs.lever.co/<org>/<uuid> and api.lever.co/v0/postings/<org>/<uuid>.
+        // Captures for later use as primary lever resolver path.
+        const leverDirect = u.hostname.endsWith('lever.co') && (
+            u.pathname.match(/^\/(?:v0\/postings\/)?([a-zA-Z0-9_-]+)\/([a-f0-9-]{36})(?:\/|$)/i)
+        );
+        if (leverDirect) {
+            const [, orgSlug, jobId] = leverDirect;
+            console.log(`🔗 Direct Lever URL detected — calling public API (org: ${orgSlug}, job: ${jobId})`);
+            const result = await fetchLeverJob(orgSlug, jobId);
+            if (result) return result;
+        }
+
+        // No markers at all? Not obviously an embedded job board we know how
+        // to route directly. Fall through to host-HTML-driven Lever detection
+        // below (which handles aggregator sites like swooped.co that relay
+        // to Lever without advertising it in the query string).
+        const hasKnownMarker = ashbyJid || ghJid;
         if (u.hostname === 'jobs.ashbyhq.com' || u.hostname.includes('greenhouse.io')) return null;
 
         let hostHtml = '';
@@ -131,6 +189,25 @@ async function resolveEmbeddedJobBoard(url) {
                 }
             }
         }
+
+        // Lever aggregator path: no marker in the query string, but the host
+        // page links to jobs.lever.co/<org>/<uuid> or api.lever.co/v0/postings/<org>/<uuid>.
+        // Matches both patterns; collect all hits and try each until one
+        // returns real data (defensive against multiple Lever links per page).
+        if (!hasKnownMarker && hostHtml) {
+            const seen = new Set();
+            const leverRe = /(?:jobs|api)\.lever\.co\/(?:v0\/postings\/)?([a-zA-Z0-9_-]+)\/([a-f0-9-]{36})/gi;
+            let match;
+            while ((match = leverRe.exec(hostHtml)) !== null) {
+                const key = `${match[1]}/${match[2]}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                console.log(`🔗 Lever link found on aggregator page — calling public API (org: ${match[1]}, job: ${match[2]})`);
+                const result = await fetchLeverJob(match[1], match[2]);
+                if (result) return result;
+            }
+        }
+
         return null;
     } catch (e) {
         console.warn(`⚠️  Embedded job board resolver skipped: ${e.message}`);
