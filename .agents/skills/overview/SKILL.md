@@ -21,8 +21,8 @@ Analyzes job-description URLs (pasted by user) against the user's CV to return a
 - **Opacity-70 rule:** tertiary emphasis (BIGGEST GAP chip, weakness labels) uses primary text color at `opacity-70`, NOT a new gray
 - **Sticky header:** canonical implementation — PR #1. App icon left-edge aligns with `--shell-max-w` container left-edge; right nav element aligns with right-edge. Uses shared `--shell-max-w: 480px` and `--shell-pad-x: 1.5rem`.
 
-## Known latent issue (fix-forward)
-**Fonts declared but not loaded.** `global.css` references `'Red Hat Display'` / `'Red Hat Mono'` but neither `Layout.astro` nor `global.css` contains an `@import` or `<link>` pulling these from Google Fonts. Browsers silently fall back to system fonts. Fix = add `@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700;900&family=Red+Hat+Mono:wght@400;700&display=swap');` to top of `global.css`. Small PR when convenient — user aware.
+## Font loading — resolved
+Red Hat Display + Red Hat Mono are loaded via `@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700;900&family=Red+Hat+Mono:wght@400;700&display=swap');` at top of `src/styles/global.css`. Resolved in PR #8 (2026-04-18). Do NOT remove the import — declared font tokens elsewhere in the file depend on it.
 
 ## Run locally (if needed)
 ```bash

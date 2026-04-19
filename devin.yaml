@@ -1,0 +1,26 @@
+# devin.yaml — bootstraps Devin sessions for gig-spottr-bot
+#
+# Runs once at the start of every Devin session on this repo. Installs deps,
+# warms the build, surfaces expected env-var names. Does NOT write secrets.
+#
+# Env-var reference (source from Devin secrets or repo `.env`):
+#   - GOOGLE_GENERATIVE_AI_API_KEY  (Gemini)
+#   - NOTION_API_KEY
+#   - NOTION_DATABASE_ID
+#   - NOTION_USER_CV_DATABASE_ID
+
+version: "1.0"
+
+install:
+  - npm install
+
+maintenance:
+  # Quick sanity-check the build still compiles on fresh install
+  - npm run build
+
+# Common commands (surfaces to agent for quick reuse)
+commands:
+  dev: npm run dev         # astro dev --host → local 4321
+  build: npm run build     # produces .vercel/output for prod
+  preview: npm run preview
+  test: npm test           # node --test (stub — minimal coverage)
