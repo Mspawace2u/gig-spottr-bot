@@ -104,13 +104,6 @@
     box-shadow: 0 0 15px rgba(45, 226, 230, 0.2);
   }
 
-  /* SCROLLABLE LIST */
-  .dashboard-list-container {
-    max-height: 450px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.1) transparent;
-  }
 }
 
 @keyframes pulse-opacity {
