@@ -195,9 +195,12 @@ async function resolveEmbeddedJobBoard(url) {
         // page links to jobs.lever.co/<org>/<uuid> or api.lever.co/v0/postings/<org>/<uuid>.
         // Matches both patterns; collect all hits and try each until one
         // returns real data (defensive against multiple Lever links per page).
+        // The leading `(?:^|\/\/|[^a-zA-Z0-9.-])` anchor requires that `jobs`/`api`
+        // is the actual leftmost subdomain label, not just a suffix of some other
+        // host name embedded in the HTML (e.g. `cleverjobs.lever.co`).
         if (!hasKnownMarker && hostHtml) {
             const seen = new Set();
-            const leverRe = /(?:jobs|api)\.lever\.co\/(?:v0\/postings\/)?([a-zA-Z0-9_-]+)\/([a-f0-9-]{36})/gi;
+            const leverRe = /(?:^|\/\/|[^a-zA-Z0-9.-])(?:jobs|api)\.lever\.co\/(?:v0\/postings\/)?([a-zA-Z0-9_-]+)\/([a-f0-9-]{36})/gi;
             let match;
             while ((match = leverRe.exec(hostHtml)) !== null) {
                 const key = `${match[1]}/${match[2]}`;
