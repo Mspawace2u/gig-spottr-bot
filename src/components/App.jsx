@@ -179,34 +179,38 @@ export default function App() {
     const tenDaysAgo = new Date();
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
 
-    const sortOldestAndScore = (a, b) => {
-      // Normalize to day level for primary sort
-      const dateA = new Date(a.createdAt).setHours(0, 0, 0, 0);
-      const dateB = new Date(b.createdAt).setHours(0, 0, 0, 0);
+    const statusOrder = { 'COMPILING': 1, 'SUBMITTED': 2, 'DEFERRED': 3, 'INTERVIEWED': 4 };
 
-      // Primary: Oldest Day first
-      if (dateA - dateB !== 0) return dateA - dateB;
-
-      // Secondary: Highest score first (within that day)
-      return (b.skillsMatchPercent || 0) - (a.skillsMatchPercent || 0);
+    const sortByScoreAndOldest = (a, b) => {
+      const scoreDiff = (b.skillsMatchPercent || 0) - (a.skillsMatchPercent || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return new Date(a.createdAt) - new Date(b.createdAt);
     };
 
-    const sortOldestOnly = (a, b) => new Date(a.createdAt) - new Date(b.createdAt);
+    const sortByNewest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
 
     return {
-      analyzed: list,
+      analyzed: [...list].sort(sortByNewest),
       isFit: list
         .filter(r => (r.userDecision === 'FIT' || (r.userDecision === 'Pending' && (r.skillsMatchPercent || 0) >= 80)))
-        .sort(sortOldestAndScore),
+        .sort(sortByScoreAndOldest),
       notFit: list
         .filter(r => (r.userDecision === 'NO FIT' || (r.userDecision === 'Pending' && (r.skillsMatchPercent || 0) < 80)))
-        .sort(sortOldestAndScore),
+        .sort(sortByScoreAndOldest),
       applied: list
         .filter(r => r.userDecision === 'APPLY' || r.userDecision === 'Applied')
-        .sort(sortOldestOnly),
+        .sort((a, b) => {
+          const orderA = statusOrder[a.applicantStatus] || 0;
+          const orderB = statusOrder[b.applicantStatus] || 0;
+          if (orderA !== orderB) return orderA - orderB;
+          
+          const dateA = a.statusDate ? new Date(a.statusDate) : new Date(a.createdAt);
+          const dateB = b.statusDate ? new Date(b.statusDate) : new Date(b.createdAt);
+          return dateA - dateB;
+        }),
       declined: list
         .filter(r => r.userDecision === 'DECLINE' || r.userDecision === 'Skipped' || (r.userDecision === 'Pending' && new Date(r.createdAt) < tenDaysAgo))
-        .sort(sortOldestOnly)
+        .sort(sortByNewest)
     };
   };
 
@@ -236,15 +240,15 @@ export default function App() {
             <motion.div variants={fadeInUp}>
               <Card>
                 <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 1: Ingestion</h1>
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-2">Target Email</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Target Email</label>
                 <input
                   type="email"
-                  className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-primary placeholder:text-white/10"
+                  className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-primary placeholder:text-white/30"
                   placeholder="name@agency.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                 />
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-3">CV Resource</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-3">CV Resource</label>
                 <div className="flex gap-2 mb-6">
                   {['text', 'file', 'link'].map(mode => (
                     <button
@@ -258,15 +262,15 @@ export default function App() {
                 </div>
 
                 {inputMode === 'text' && (
-                  <textarea className="w-full bg-brand-bg/80 border border-white/10 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-primary transition-all placeholder:text-white/10" placeholder="Paste resume text..." value={cvText} onChange={e => setCvText(e.target.value)} />
+                  <textarea className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-primary transition-all placeholder:text-white/30" placeholder="Paste resume text..." value={cvText} onChange={e => setCvText(e.target.value)} />
                 )}
 
                 {inputMode === 'link' && (
-                  <input type="url" className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-4 focus:outline-none focus:border-brand-tertiary transition-all placeholder:text-white/10" placeholder="https://linkedin.com/in/you" value={cvLink} onChange={e => setCvLink(e.target.value)} />
+                  <input type="url" className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-4 focus:outline-none focus:border-brand-tertiary transition-all placeholder:text-white/30" placeholder="https://linkedin.com/in/you" value={cvLink} onChange={e => setCvLink(e.target.value)} />
                 )}
 
                 {inputMode === 'file' && (
-                  <div className="w-full bg-brand-bg/50 border border-white/10 hover:border-brand-secondary rounded-2xl p-8 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all" onClick={() => fileInputRef.current?.click()}>
+                  <div className="w-full bg-brand-bg/50 border border-white/30 hover:border-brand-secondary rounded-2xl p-8 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all" onClick={() => fileInputRef.current?.click()}>
                     <input type="file" className="hidden" ref={fileInputRef} accept=".pdf,.txt" onChange={e => setCvFile(e.target.files[0])} />
                     <Upload size={24} className="text-brand-secondary mb-3 opacity-50" />
                     <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">{cvFile ? cvFile.name : 'Drop PDF Resume'}</span>
@@ -290,22 +294,22 @@ export default function App() {
             </motion.div>
             <motion.div variants={fadeInUp}>
               <Card>
-                <h1 className="text-xs font-bold tracking-[0.2em] text-brand-secondary mb-6 uppercase">Phase 2: Scrape & Scan</h1>
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-2">Job URL (Auto-Scrape)</label>
+                <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 2: Scrape & Scan</h1>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Job URL (Auto-Scrape)</label>
                 <input
                   type="url"
-                  className="w-full bg-brand-bg/80 border border-white/10 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-secondary placeholder:text-white/10"
+                  className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-secondary placeholder:text-white/30"
                   placeholder="https://ashbyhq.com/..."
                   value={jobUrl}
                   onChange={e => setJobUrl(e.target.value)}
                 />
                 <div className="relative flex items-center mb-6">
-                  <div className="flex-grow border-t border-white/5"></div>
-                  <span className="flex-shrink mx-4 text-[10px] font-black opacity-20 tracking-widest">OR PASTE RAW</span>
-                  <div className="flex-grow border-t border-white/5"></div>
+                  <div className="flex-grow border-t border-white/30"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-black text-white/80 tracking-widest">OR PASTE RAW</span>
+                  <div className="flex-grow border-t border-white/30"></div>
                 </div>
                 <textarea
-                  className="w-full bg-brand-bg/80 border border-white/10 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-secondary transition-all placeholder:text-white/10"
+                  className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-secondary transition-all placeholder:text-white/30"
                   placeholder="Paste job description..."
                   value={jobText}
                   onChange={e => setJobText(e.target.value)}
@@ -508,6 +512,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
   const [appStatus, setAppStatus] = useState('');
   const [isWon, setIsWon] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [movingTo, setMovingTo] = useState(null);
 
   const triggerConfetti = () => {
     confetti({
@@ -529,7 +534,12 @@ function ProgressItemCard({ report, status, onUpdate }) {
   };
 
   const handleMove = async (newStatus) => {
+    setMovingTo(newStatus);
     setLoading(true);
+    
+    // Artificial delay for mobile feedback
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
       await fetch('/api/update-status', {
         method: 'POST',
@@ -539,6 +549,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
       onUpdate();
     } catch (err) {
       console.error('Failed to move:', err);
+      setMovingTo(null);
     } finally {
       setLoading(false);
     }
@@ -555,22 +566,22 @@ function ProgressItemCard({ report, status, onUpdate }) {
     >
       <motion.div layout className="flex justify-between items-start gap-4">
         <div className="space-y-3 min-w-0">
-          {/* micro-label row: company • date */}
-          <div className="flex items-center gap-4 text-xs tracking-[0.25em]">
-            <div className="flex items-center gap-1.5 font-medium normal-case">
-              <Building2 size={12} strokeWidth={2} className="text-brand-secondary" />
-              <span className="truncate max-w-[120px] text-white/70">{report.company || 'Unknown'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 font-medium normal-case">
-              <Calendar size={12} strokeWidth={2} className="text-brand-secondary" />
-              <span className="text-white/70">{new Date(report.createdAt).toLocaleDateString()}</span>
-            </div>
+          {/* Row 1: Date (Top Left) */}
+          <div className="flex items-center gap-1.5 font-medium normal-case text-xs tracking-[0.25em]">
+            <Calendar size={12} strokeWidth={2} className="text-brand-secondary" />
+            <span className="text-white/70">{new Date(report.createdAt).toLocaleDateString()}</span>
           </div>
 
-          {/* H3 job title */}
+          {/* Row 2: H3 job title */}
           <h3 className="text-lg md:text-xl font-bold tracking-tight normal-case group-hover:text-brand-secondary transition-colors leading-tight">
             {report.jobTitle}
           </h3>
+
+          {/* Row 3: Company (Under H3) */}
+          <div className="flex items-center gap-1.5 font-medium normal-case text-xs tracking-[0.25em]">
+            <Building2 size={12} strokeWidth={2} className="text-brand-secondary" />
+            <span className="truncate text-white/70">{report.company || 'Unknown'}</span>
+          </div>
         </div>
 
         <div className="shrink-0 flex flex-col items-end justify-between self-stretch min-h-[44px]">
@@ -879,9 +890,11 @@ function ProgressItemCard({ report, status, onUpdate }) {
                         disabled={loading}
                         onClick={() => handleMove(btn.target)}
                         className={`flex items-center justify-center gap-2 py-3 px-4 rounded-full border text-[10px] font-bold tracking-widest transition-all
-                          ${status.toUpperCase() === btn.target || (status === 'isFit' && btn.target === 'FIT') || (status === 'notFit' && btn.target === 'NO FIT')
-                            ? 'bg-transparent border-brand-secondary text-brand-secondary shadow-[0_0_10px_rgba(45,226,230,0.15)]'
-                            : 'bg-transparent border-white/10 text-white/40 hover:border-brand-primary/50 hover:text-white'
+                          ${movingTo === btn.target
+                            ? 'border-brand-primary text-white bg-brand-primary/10 shadow-[0_0_15px_rgba(255,47,146,0.3)]'
+                            : (status.toUpperCase() === btn.target || (status === 'isFit' && btn.target === 'FIT') || (status === 'notFit' && btn.target === 'NO FIT'))
+                              ? 'bg-transparent border-brand-secondary text-brand-secondary shadow-[0_0_10px_rgba(45,226,230,0.15)]'
+                              : 'bg-transparent border-white/10 text-white/40 hover:border-brand-primary/50 hover:text-white'
                           }`}
                       >
                         {btn.icon}
