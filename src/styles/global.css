@@ -44,7 +44,7 @@
     background-color: rgba(15, 15, 15, 0.7);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.20);
   }
   
   .vibe-glow-pool {
