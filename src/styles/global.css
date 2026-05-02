@@ -76,7 +76,7 @@
     z-index: -1;
     transition: opacity 0.3s ease;
   }
-  .rainbow-border:hover::before {
+  .rainbow-border:hover:not(:disabled)::before {
     opacity: 0;
   }
 
@@ -108,11 +108,11 @@
 
 @keyframes pulse-opacity {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+    50% { opacity: 0.5; }
 }
 
 .animate-pulse-opacity {
-    animation: pulse-opacity 1.5s ease-in-out infinite;
+    animation: pulse-opacity 0.8s ease-in-out infinite;
 }
 
 @keyframes rainbow-rotate {
