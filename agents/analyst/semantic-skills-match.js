@@ -113,8 +113,8 @@ Return ONLY valid JSON in this format:
 }`;
 
         const response = await callLLM(prompt, {
-            provider: 'openai',
-            model: 'gpt-5.4-mini',
+            provider: 'gemini',
+            model: 'gemini-2.5-flash',
             temperature: 0.2,
             responseSchema: {
                 type: 'OBJECT',
