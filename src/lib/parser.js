@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { extractText, getDocumentProxy } from 'unpdf';
+import { isDebugEnabled, logExtractionStats } from '../../lib/score-debug.js';
 
 const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
@@ -335,9 +336,16 @@ export async function parseFile(fileBlob) {
             // measurably degrading extraction quality on multi-page CVs.
             const pdf = await getDocumentProxy(new Uint8Array(buffer));
             const { text: pages } = await extractText(pdf, { mergePages: false });
-            return Array.isArray(pages) ? pages.join('\n\n') : pages;
+            const text = Array.isArray(pages) ? pages.join('\n\n') : pages;
+            logExtractionStats('parseFile.pdf', text);
+            if (isDebugEnabled() && Array.isArray(pages)) {
+                console.log(`[SCORE-DEBUG] parseFile.pdf.meta {"pageCount":${pages.length}}`);
+            }
+            return text;
         } else if (fileName.endsWith('.txt')) {
-            return buffer.toString('utf-8');
+            const text = buffer.toString('utf-8');
+            logExtractionStats('parseFile.txt', text);
+            return text;
         } else {
             throw new Error(`Unsupported file type: ${fileName}. Please upload a PDF or TXT file.`);
         }

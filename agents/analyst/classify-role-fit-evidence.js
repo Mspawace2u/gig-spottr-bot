@@ -1,5 +1,6 @@
 import { callLLM, parseJsonFromLLM } from '../../lib/llm.js';
 import { spottrConfig } from '../../config/spottr.js';
+import { logEvidenceStats } from '../../lib/score-debug.js';
 
 /**
  * ANALYST AGENT - Skill: Classify Role Fit Evidence
@@ -129,7 +130,7 @@ export async function classifyRoleFitEvidence({
 
     const buckets = groupByEvidenceType(cleanedClassifications);
 
-    return {
+    const result = {
         score: finalScore,
         rawSemanticScore: skillsMatch.score || 0,
         experienceScore: experienceMatch.score || 0,
@@ -146,6 +147,9 @@ export async function classifyRoleFitEvidence({
             ...buckets.missing_capability
         ].slice(0, 5)
     };
+
+    logEvidenceStats('classifyRoleFitEvidence', result);
+    return result;
 }
 
 function normalizeUserSkills(userSkills) {
