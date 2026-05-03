@@ -328,9 +328,14 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
+            // Per-page extraction preserves intra-page newlines (bullet
+            // separators, section breaks) that the downstream LLM needs
+            // for skills/experience segmentation. mergePages:true joins
+            // pages with a single space and strips all those newlines,
+            // measurably degrading extraction quality on multi-page CVs.
             const pdf = await getDocumentProxy(new Uint8Array(buffer));
-            const { text } = await extractText(pdf, { mergePages: true });
-            return text;
+            const { text: pages } = await extractText(pdf, { mergePages: false });
+            return Array.isArray(pages) ? pages.join('\n\n') : pages;
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');
         } else {
