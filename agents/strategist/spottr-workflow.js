@@ -3,6 +3,7 @@ import { extractCvExperience } from '../translator/extract-cv-experience.js';
 import { extractJobRequirements } from '../translator/extract-job-requirements.js';
 import { semanticSkillsMatch } from '../analyst/semantic-skills-match.js';
 import { calculateExperienceMatch } from '../analyst/calculate-experience-match.js';
+import { classifyRoleFitEvidence } from '../analyst/classify-role-fit-evidence.js';
 import { generateStrengthsWeaknesses } from '../creator/generate-strengths-weaknesses.js';
 import { validateExtraction } from '../manager/validate-extraction.js';
 import { spottrConfig } from '../../config/spottr.js';
@@ -10,13 +11,11 @@ import { saveUserCvToNotion, saveFitReportToNotion, saveJobToNotion } from '../c
 
 /**
  * STRATEGIST AGENT - Orchestrates the Spottr Bot workflow
- * 
- * This is the "boss" that decides which agents to hire and in what order.
- * 
+ *
  * Workflow:
- * 1. MODULE 1: Onboard user (extract CV data)
- * 2. MODULE 3: Analyze job fit (extract requirements, calculate scores)
- * 3. MODULE 5: Generate HITL report (strengths/weaknesses, recommendation)
+ * 1. MODULE 1: Onboard user / extract CV data
+ * 2. MODULE 3: Analyze job fit / extract job requirements + score fit
+ * 3. MODULE 5: Generate HITL report / strengths, weaknesses, recommendation
  */
 
 // ============================================
@@ -29,19 +28,27 @@ export async function onboardUser(email, cvText) {
     try {
         // Step 1: Translator extracts skills
         console.log('  → Translator: Extracting skills...');
-        const skills = await extractCvSkills(cvText);
+        const extractedSkills = await extractCvSkills(cvText);
+
+
 
         // Step 2: Manager validates skills
         console.log('  → Manager: Validating skills...');
-        const skillsValidation = validateExtraction(skills, cvText, 'skills');
+        const skillsValidation = validateExtraction(extractedSkills, cvText, 'skills');
 
         if (!skillsValidation.valid) {
             throw new Error(`Skills validation failed: ${skillsValidation.errors.join(', ')}`);
         }
 
         if (skillsValidation.warnings.length > 0) {
-            console.warn('  ⚠️ Warnings:', skillsValidation.warnings);
+            console.warn(`  ⚠️ Skills validation warnings: ${skillsValidation.warnings.length}`);
         }
+
+        const validatedSkills = skillsValidation.filteredData?.length
+            ? skillsValidation.filteredData
+            : extractedSkills;
+
+
 
         // Step 3: Translator extracts experience
         console.log('  → Translator: Extracting experience...');
@@ -56,16 +63,18 @@ export async function onboardUser(email, cvText) {
         }
 
         if (experienceValidation.warnings.length > 0) {
-            console.warn('  ⚠️ Warnings:', experienceValidation.warnings);
+            console.warn(`  ⚠️ Experience validation warnings: ${experienceValidation.warnings.length}`);
         }
+
+        const validatedExperienceData = experienceValidation.filteredData || experienceData;
 
         // Step 5: Courier saves to Notion
         console.log('  → Courier: Saving to Notion...');
         const cvData = {
             original: cvText,
-            skills: skills,
-            experience: experienceData.experience,
-            totalYears: experienceData.totalYears
+            skills: validatedSkills,
+            experience: validatedExperienceData.experience,
+            totalYears: validatedExperienceData.totalYears
         };
 
         await saveUserCvToNotion(email, cvData);
@@ -74,8 +83,8 @@ export async function onboardUser(email, cvText) {
 
         return {
             success: true,
-            skills: skills,
-            experience: experienceData,
+            skills: validatedSkills,
+            experience: validatedExperienceData,
             validationWarnings: [
                 ...skillsValidation.warnings,
                 ...experienceValidation.warnings
@@ -112,7 +121,7 @@ export async function analyzeJobFit(email, jobText, jobUrl, userData, titleHint 
             requiredExperience: jobRequirements.requiredExperience
         });
 
-        // Step 2: Analyst calculates skills match (deterministic)
+        // Step 2: Analyst calculates semantic skills match
         console.log('  → Analyst: Calculating skills match...');
         const skillsMatch = await semanticSkillsMatch(
             userData.skills,
@@ -120,22 +129,54 @@ export async function analyzeJobFit(email, jobText, jobUrl, userData, titleHint 
             jobRequirements.preferredSkills
         );
 
-        // Step 3: Analyst calculates experience match (deterministic)
+        // Step 3: Analyst calculates experience match
         console.log('  → Analyst: Calculating experience match...');
         const experienceMatch = calculateExperienceMatch(
             {
                 totalYears: userData.totalYears,
                 experience: userData.experience,
-                level: userData.experience[0]?.level || 'not specified'
+                level: userData.experience?.[0]?.level || 'not specified'
             },
             jobRequirements.requiredExperience
         );
 
-        // Step 4: Strategist decides recommendation
-        console.log('  → Strategist: Making recommendation...');
-        const recommendation = makeRecommendation(skillsMatch.score, experienceMatch.score);
+        // Step 4: Analyst classifies evidence quality
+        console.log('  → Analyst: Classifying role-fit evidence...');
+        const evidenceClassification = await classifyRoleFitEvidence({
+            userSkills: userData.skills,
+            userExperience: {
+                totalYears: userData.totalYears,
+                experience: userData.experience,
+                level: userData.experience?.[0]?.level || 'not specified'
+            },
+            jobRequirements,
+            skillsMatch,
+            experienceMatch
+        });
 
-        // Step 5: Creator generates strengths/weaknesses explanation
+        const adjustedScore = calculateAdjustedFitScore(skillsMatch.score, evidenceClassification);
+
+        const adjustedSkillsMatch = {
+            ...skillsMatch,
+            score: adjustedScore,
+            rawSemanticScore: skillsMatch.score,
+            evidenceScore: evidenceClassification.score,
+            evidenceClassification
+        };
+
+        const overallFitScore = calculateOverallFitScore({
+            rawSkillsScore: skillsMatch.score,
+            evidenceScore: evidenceClassification.score,
+            experienceScore: experienceMatch.score
+        });
+
+
+
+        // Step 5: Strategist decides recommendation
+        console.log('  → Strategist: Making recommendation...');
+        const recommendation = makeRecommendation(adjustedSkillsMatch.score, experienceMatch.score);
+
+        // Step 6: Creator generates strengths/weaknesses explanation
         console.log('  → Creator: Generating explanation...');
         const explanation = await generateStrengthsWeaknesses({
             matchedSkills: [
@@ -148,20 +189,26 @@ export async function analyzeJobFit(email, jobText, jobUrl, userData, titleHint 
             ],
             userExperience: {
                 totalYears: userData.totalYears,
-                level: userData.experience[0]?.level || 'not specified'
+                level: userData.experience?.[0]?.level || 'not specified'
             },
-            jobExperience: jobRequirements.requiredExperience
+            jobExperience: jobRequirements.requiredExperience,
+            evidenceClassification
         });
 
-        // Step 6: Courier saves fit report to Notion
+        // Step 7: Courier saves fit report to Notion
         console.log('  → Courier: Saving fit report...');
         const fitReport = await saveFitReportToNotion({
             userEmail: email,
             jobTitle: jobRequirements.jobTitle || 'Unknown Job Title',
             company: jobRequirements.company || 'Unknown Company',
             jobUrl: jobUrl,
-            skillsMatchPercent: skillsMatch.score,
+
+            overallFitScore: overallFitScore,
+            skillsMatchPercent: adjustedSkillsMatch.score,
+            rawSkillsMatchPercent: skillsMatch.score,
+            evidenceMatchPercent: evidenceClassification.score,
             experienceMatchPercent: experienceMatch.score,
+
             strengths: explanation.strengths,
             weaknesses: explanation.weaknesses,
             recommendation: recommendation,
@@ -173,7 +220,10 @@ export async function analyzeJobFit(email, jobText, jobUrl, userData, titleHint 
         return {
             success: true,
             reportId: fitReport.pageId,
-            skillsMatch: skillsMatch,
+            overallFitScore: overallFitScore,
+            skillsMatch: adjustedSkillsMatch,
+            rawSkillsMatchPercent: skillsMatch.score,
+            evidenceMatchPercent: evidenceClassification.score,
             experienceMatch: experienceMatch,
             recommendation: recommendation,
             strengths: explanation.strengths,
@@ -195,7 +245,39 @@ function makeRecommendation(skillsScore, experienceScore) {
 
     if (skillsScore >= skillsMatch && experienceScore >= experienceMatch) {
         return 'Apply';
-    } else {
-        return "Don't Apply";
     }
+
+    return "Don't Apply";
+}
+
+function calculateAdjustedFitScore(rawSkillsScore, evidenceClassification) {
+    const evidenceScore = evidenceClassification?.score ?? rawSkillsScore;
+
+    const biggestProofGaps = evidenceClassification?.biggestProofGaps || [];
+
+    const missingCapabilityCount = biggestProofGaps.filter(
+        gap => gap.evidenceType === 'missing_capability'
+    ).length;
+
+    const missingProofCount = biggestProofGaps.filter(
+        gap => gap.evidenceType === 'missing_proof'
+    ).length;
+
+    // Start from semantic role match, then use evidence quality as a correction.
+    // Do not let proof strictness nuke a strong adjacent/operator fit.
+    let adjusted = Math.round((rawSkillsScore * 0.75) + (evidenceScore * 0.25));
+
+    // Apply light penalties only for the biggest gaps.
+    adjusted -= missingCapabilityCount * 3;
+    adjusted -= missingProofCount * 1;
+
+    return Math.max(0, Math.min(100, adjusted));
+}
+
+function calculateOverallFitScore({ rawSkillsScore, evidenceScore, experienceScore }) {
+    return Math.round(
+        (rawSkillsScore * 0.50) +
+        (evidenceScore * 0.15) +
+        (experienceScore * 0.35)
+    );
 }

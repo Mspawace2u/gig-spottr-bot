@@ -1,6 +1,5 @@
 import * as cheerio from 'cheerio';
-import * as pdfImport from 'pdf-parse';
-const pdf = pdfImport.default || pdfImport;
+import { PDFParse } from 'pdf-parse';
 
 const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
@@ -227,14 +226,14 @@ export async function parseUrl(url) {
                 'User-Agent': SCRAPE_USER_AGENT
             }
         });
-        
+
         if (!response.ok) {
             throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
         }
-        
+
         const html = await response.text();
         const $ = cheerio.load(html);
-        
+
         let extractedText = '';
         let title = $('title').text() || $('meta[property="og:title"]').attr('content') || $('h1').first().text() || '';
 
@@ -275,18 +274,18 @@ export async function parseUrl(url) {
 
         // STRATEGY 3: Targeted Standard Containers
         if (extractedText.length < 300) {
-             const containers = [
-                '[itemprop="description"]', 
-                '.job-description', 
-                '.posting-description', 
-                '#job-description', 
+            const containers = [
+                '[itemprop="description"]',
+                '.job-description',
+                '.posting-description',
+                '#job-description',
                 '.content',
                 'main'
-             ];
-             containers.forEach(sel => {
+            ];
+            containers.forEach(sel => {
                 const text = $(sel).text().trim();
                 if (text.length > extractedText.length) extractedText = text;
-             });
+            });
         }
 
         // STRATEGY 4: Meta-Data Bridging (Clean & SEO-Optimized)
@@ -297,7 +296,7 @@ export async function parseUrl(url) {
 
         // QUALITY GUARD
         const cleanSignal = extractedText.replace(/\s+/g, ' ').trim();
-        
+
         // Final fallback if everything is thin
         if (cleanSignal.length < 150) {
             $('script, style, noscript, iframe, img, svg, video').remove();
@@ -309,8 +308,8 @@ export async function parseUrl(url) {
             return { text: '', title: title.trim(), lowSignal: true };
         }
 
-        return { 
-            text: cleanSignal, 
+        return {
+            text: cleanSignal,
             title: title.trim(),
             lowSignal: cleanSignal.length < 300
         };
@@ -326,8 +325,14 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const data = await pdf(buffer);
-            return data.text;
+            const parser = new PDFParse({ data: buffer });
+
+            try {
+                const result = await parser.getText();
+                return result.text;
+            } finally {
+                await parser.destroy?.();
+            }
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');
         } else {
