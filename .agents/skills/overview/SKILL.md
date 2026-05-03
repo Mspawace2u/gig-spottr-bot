@@ -1,3 +1,8 @@
+---
+name: gig-spottr-bot-overview
+description: Repo fingerprint and guardrails for gig-spottr-bot. Covers the Astro 5 + React 19 + Tailwind 4 stack, the strict design-system tokens (brand colors, fonts, sticky-header layout), required env vars for local runs, Notion integration rules, V2/V3 backlog, and canonical UI recipes for the CTA "agent is processing" state and the shared .vibe-glass border opacity. Use when working in the gig-spottr-bot repo.
+---
+
 # gig-spottr-bot — repo fingerprint & guardrails
 
 **Trigger:** When working in the `gig-spottr-bot` repo.
@@ -20,6 +25,31 @@ Analyzes job-description URLs (pasted by user) against the user's CV to return a
 - **Font tokens declared in `src/styles/global.css`:** `Red Hat Display` + `Red Hat Mono`
 - **Opacity-70 rule:** tertiary emphasis (BIGGEST GAP chip, weakness labels) uses primary text color at `opacity-70`, NOT a new gray
 - **Sticky header:** canonical implementation — PR #1. App icon left-edge aligns with `--shell-max-w` container left-edge; right nav element aligns with right-edge. Uses shared `--shell-max-w: 480px` and `--shell-pad-x: 1.5rem`.
+
+### CTA "agent is processing" loading state — canonical recipe (PR #9)
+Applies to the shared `<Button>` component used on Page 1 (ONBOARD — *Sync Baseline*), Page 2 (ANALYZE — *Analyze Fit*), and the REPORT/SUCCESS pages. Source: `src/components/UI/Button.jsx` + `.rainbow-border` / `@keyframes pulse-opacity` in `src/styles/global.css`.
+
+- **Rainbow gradient hairline stays at 100%** during loading. Don't reintroduce a `border border-white/80` swap or any solid-color border on the `<button>` while loading — it overlays the rainbow and reads as a bright white outline (this was the original bug).
+- The `.rainbow-border:hover::before { opacity: 0 }` rule is scoped via `:not(:disabled)` so the rainbow stays at 100% while the button is `disabled` (loading). Don't drop the `:not(:disabled)` guard.
+- **Slight diffuse soft-purple glow** while loading: `shadow-[0_0_16px_rgba(155,92,255,0.35)]` (matches brand tertiary `#9b5cff`). Glow is intentionally subtle, not the louder `0_0_30px` hover-pink glow used in the non-loading hover state.
+- **Label cycles bright white** (inherits the button's `text-white`); the loading branch must NOT add `text-brand-primary`.
+- **Pulse animation:** `@keyframes pulse-opacity` goes `0%, 100% { opacity: 1 }` → `50% { opacity: 0.5 }` (dips to half-bright, never to 0). `.animate-pulse-opacity` runs at `0.8s ease-in-out infinite`.
+- **Target icon shares the parent's pulse.** Apply `animate-pulse-opacity` to the inner wrapper `<div>` once — both the `<span>` label and the `<Target>` icon inherit the cascading opacity, so they cycle in lockstep at the same speed and opacity. The icon keeps its explicit `text-brand-tertiary` purple.
+- **Suppress `disabled:opacity-50` while loading.** Branch the className: loading branch gets `cursor-wait shadow-[0_0_16px_rgba(155,92,255,0.35)] hover:bg-transparent hover:text-white hover:shadow-[0_0_16px_rgba(155,92,255,0.35)]`; not-loading branch keeps the normal `hover:bg-brand-primary` / `disabled:opacity-50` / `disabled:hover:*` chain. Otherwise the rainbow + glow render at 50% during processing.
+
+What stays unchanged: rest state (transparent fill, rainbow at 100%, white text), hover state when not loading (solid pink fill + black text + hot-pink glow), and plain-disabled state (`loading=false, disabled=true`: 50% opacity, `not-allowed` cursor, hover effects suppressed).
+
+## Layout
+- **`.vibe-glass` border token = white 20%** (PR #9, was 5%). Defined once in `src/styles/global.css`:
+  ```css
+  .vibe-glass {
+    background-color: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+  }
+  ```
+  This single class wraps the Page 1 (ONBOARD) callout `<Card>`, the Page 2 (ANALYZE) callout `<Card>`, the three Results Report `<Card>`s (overall score + Competitive Edge + Resistance Points), and the Progress Log items (`ProgressItemCard` directly applies `vibe-glass`). Bumping this value moves all four surfaces in lockstep — don't fork it per surface.
+  Surfaces that intentionally set their own border and do **not** share this token: form inputs (`border-white/30`), the inline `inputMode` toggle row (`border-white/10`), the SUCCESS modal (`border-white/10`), and the empty-state placeholder (`border-dashed border-white/5`). The colored left-edge `border-l-2` accents on Report's Competitive Edge / Resistance Points cards are separate accents on top of the `.vibe-glass` outline.
 
 ## Font loading — resolved
 Red Hat Display + Red Hat Mono are loaded via `@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700;900&family=Red+Hat+Mono:wght@400;700&display=swap');` at top of `src/styles/global.css`. Resolved in PR #8 (2026-04-18). Do NOT remove the import — declared font tokens elsewhere in the file depend on it.
@@ -50,4 +80,8 @@ Required env vars (not in repo — source from user or `.env`):
 - **V3:** Workday URL-parse resolver (URL carries tenant/region/site, no lookup table needed), SmartRecruiters, Workable, Recruitee Tier 1 resolvers
 
 ## Agent Army alignment
-This repo is a **live reference implementation** of Patty's Agent Army design system (see user Knowledge note). Patterns observed here are canonical for new SPAs.
+This repo is a **live reference implementation** of Patty's Agent Army design system (see user Knowledge note). Patterns observed here are canonical for new SPAs. Recent reference points:
+- Sticky header canonical implementation → PR #1
+- Notion schema-drift defensive write → PR #4
+- Red Hat Display + Mono Google Fonts import → PR #8
+- CTA loading-state recipe + `.vibe-glass` border token at white 20% → PR #9
