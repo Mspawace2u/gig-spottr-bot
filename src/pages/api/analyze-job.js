@@ -17,20 +17,20 @@ export const POST = async ({ request }) => {
             console.log(`🌐 Auto-scraping job description from: ${jobUrl}`);
             try {
                 const scraped = await parseUrl(jobUrl);
-                
+
                 // Signal Quality Guard
                 if (scraped.lowSignal || !scraped.text || scraped.text.length < 300) {
                     console.warn('⚠️ Low signal detected from URL scraper. Reverting to manual paste.');
-                    return new Response(JSON.stringify({ 
-                        error: `I'm having trouble reading that specific link (likely protected or require a login). Please paste the Job Description text manually below to ensure an accurate fit analysis.` 
+                    return new Response(JSON.stringify({
+                        error: `I'm having trouble reading that specific link (likely protected or require a login). Please paste the Job Description text manually below to ensure an accurate fit analysis.`
                     }), { status: 400, headers: { 'Content-Type': 'application/json' } });
                 }
 
                 jobText = scraped.text;
                 titleHint = scraped.title;
             } catch (scrapeError) {
-                return new Response(JSON.stringify({ 
-                    error: `Scraping failed: ${scrapeError.message}. Please paste the text manually.` 
+                return new Response(JSON.stringify({
+                    error: `Scraping failed: ${scrapeError.message}. Please paste the text manually.`
                 }), { status: 400, headers: { 'Content-Type': 'application/json' } });
             }
         }
@@ -51,6 +51,8 @@ export const POST = async ({ request }) => {
             }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
 
+
+
         // Step 2: Call the Strategist workflow (Module 3)
         const result = await analyzeJobFit(email, jobText, jobUrl, {
             skills: userData.skills,
@@ -63,7 +65,10 @@ export const POST = async ({ request }) => {
         return new Response(JSON.stringify({
             success: true,
             reportId: result.reportId,
+            overallFitScore: result.overallFitScore,
             skillsMatch: result.skillsMatch,
+            rawSkillsMatchPercent: result.rawSkillsMatchPercent,
+            evidenceMatchPercent: result.evidenceMatchPercent,
             experienceMatch: result.experienceMatch,
             recommendation: result.recommendation,
             strengths: result.strengths,

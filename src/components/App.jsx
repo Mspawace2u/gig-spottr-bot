@@ -181,8 +181,10 @@ export default function App() {
 
     const statusOrder = { 'COMPILING': 1, 'SUBMITTED': 2, 'DEFERRED': 3, 'INTERVIEWED': 4 };
 
+    const getFitScore = (report) => report.overallFitScore ?? report.skillsMatchPercent ?? 0;
+
     const sortByScoreAndOldest = (a, b) => {
-      const scoreDiff = (b.skillsMatchPercent || 0) - (a.skillsMatchPercent || 0);
+      const scoreDiff = getFitScore(b) - getFitScore(a);
       if (scoreDiff !== 0) return scoreDiff;
       return new Date(a.createdAt) - new Date(b.createdAt);
     };
@@ -192,10 +194,10 @@ export default function App() {
     return {
       analyzed: [...list].sort(sortByNewest),
       isFit: list
-        .filter(r => (r.userDecision === 'FIT' || (r.userDecision === 'Pending' && (r.skillsMatchPercent || 0) >= 80)))
+        .filter(r => (r.userDecision === 'FIT' || (r.userDecision === 'Pending' && getFitScore(r) >= 80)))
         .sort(sortByScoreAndOldest),
       notFit: list
-        .filter(r => (r.userDecision === 'NO FIT' || (r.userDecision === 'Pending' && (r.skillsMatchPercent || 0) < 80)))
+        .filter(r => (r.userDecision === 'NO FIT' || (r.userDecision === 'Pending' && getFitScore(r) < 80)))
         .sort(sortByScoreAndOldest),
       applied: list
         .filter(r => r.userDecision === 'APPLY' || r.userDecision === 'Applied')
@@ -203,7 +205,7 @@ export default function App() {
           const orderA = statusOrder[a.applicantStatus] || 0;
           const orderB = statusOrder[b.applicantStatus] || 0;
           if (orderA !== orderB) return orderA - orderB;
-          
+
           const dateA = a.statusDate ? new Date(a.statusDate) : new Date(a.createdAt);
           const dateB = b.statusDate ? new Date(b.statusDate) : new Date(b.createdAt);
           return dateA - dateB;
@@ -231,193 +233,200 @@ export default function App() {
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
       >
         <AnimatePresence mode="wait">
-        {step === 'ONBOARD' && (
-          <motion.div key="onboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
-            <motion.div variants={fadeInUp} className="mb-10 text-left">
-              <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Gig Spottr</h1>
-              <h2 className="text-brand-secondary text-lg">Establish your strategic baseline.</h2>
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <Card>
-                <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 1: Ingestion</h1>
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Target Email</label>
-                <input
-                  type="email"
-                  className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-primary placeholder:text-white/30"
-                  placeholder="name@agency.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                />
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-3">CV Resource</label>
-                <div className="flex gap-2 mb-6">
-                  {['text', 'file', 'link'].map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => setInputMode(mode)}
-                      className={`flex-1 flex gap-2 justify-center items-center py-3 rounded-xl border text-[10px] font-bold tracking-widest transition-all ${inputMode === mode ? 'bg-brand-primary border-brand-primary text-black' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
-                    >
-                      {mode.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                {inputMode === 'text' && (
-                  <textarea className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-primary transition-all placeholder:text-white/30" placeholder="Paste resume text..." value={cvText} onChange={e => setCvText(e.target.value)} />
-                )}
-
-                {inputMode === 'link' && (
-                  <input type="url" className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-4 focus:outline-none focus:border-brand-tertiary transition-all placeholder:text-white/30" placeholder="https://linkedin.com/in/you" value={cvLink} onChange={e => setCvLink(e.target.value)} />
-                )}
-
-                {inputMode === 'file' && (
-                  <div className="w-full bg-brand-bg/50 border border-white/30 hover:border-brand-secondary rounded-2xl p-8 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all" onClick={() => fileInputRef.current?.click()}>
-                    <input type="file" className="hidden" ref={fileInputRef} accept=".pdf,.txt" onChange={e => setCvFile(e.target.files[0])} />
-                    <Upload size={24} className="text-brand-secondary mb-3 opacity-50" />
-                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">{cvFile ? cvFile.name : 'Drop PDF Resume'}</span>
+          {step === 'ONBOARD' && (
+            <motion.div key="onboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
+              <motion.div variants={fadeInUp} className="mb-10 text-left">
+                <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Gig Spottr</h1>
+                <h2 className="text-brand-secondary text-lg">Establish your strategic baseline.</h2>
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <Card>
+                  <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 1: Ingestion</h1>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Target Email</label>
+                  <input
+                    type="email"
+                    className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-primary placeholder:text-white/30"
+                    placeholder="name@agency.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-3">CV Resource</label>
+                  <div className="flex gap-2 mb-6">
+                    {['text', 'file', 'link'].map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => setInputMode(mode)}
+                        className={`flex-1 flex gap-2 justify-center items-center py-3 rounded-xl border text-[10px] font-bold tracking-widest transition-all ${inputMode === mode ? 'bg-brand-primary border-brand-primary text-black' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
+                      >
+                        {mode.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
-                )}
-                <Button onClick={handleOnboard} loading={loading}>
-                  {loading ? 'Syncing Baseline' : 'Sync Baseline'}
+
+                  {inputMode === 'text' && (
+                    <textarea className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-primary transition-all placeholder:text-white/30" placeholder="Paste resume text..." value={cvText} onChange={e => setCvText(e.target.value)} />
+                  )}
+
+                  {inputMode === 'link' && (
+                    <input type="url" className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-4 focus:outline-none focus:border-brand-tertiary transition-all placeholder:text-white/30" placeholder="https://linkedin.com/in/you" value={cvLink} onChange={e => setCvLink(e.target.value)} />
+                  )}
+
+                  {inputMode === 'file' && (
+                    <div className="w-full bg-brand-bg/50 border border-white/30 hover:border-brand-secondary rounded-2xl p-8 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all" onClick={() => fileInputRef.current?.click()}>
+                      <input type="file" className="hidden" ref={fileInputRef} accept=".pdf,.txt" onChange={e => setCvFile(e.target.files[0])} />
+                      <Upload size={24} className="text-brand-secondary mb-3 opacity-50" />
+                      <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">{cvFile ? cvFile.name : 'Drop PDF Resume'}</span>
+                    </div>
+                  )}
+                  <Button onClick={handleOnboard} loading={loading}>
+                    {loading ? 'Syncing Baseline' : 'Sync Baseline'}
+                  </Button>
+                  {/* Fixed Alignment for Error */}
+                  {error && <p className="text-brand-primary mt-4 text-[10px] font-black uppercase tracking-widest text-left leading-relaxed">{error}</p>}
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {step === 'ANALYZE' && (
+            <motion.div key="analyze" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
+              <motion.div variants={fadeInUp} className="mb-10 text-left">
+                <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Ask Analyst</h1>
+                <h2 className="text-brand-secondary text-lg">Analyze Job Market Fit</h2>
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <Card>
+                  <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 2: Scrape & Scan</h1>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Job URL (Auto-Scrape)</label>
+                  <input
+                    type="url"
+                    className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-secondary placeholder:text-white/30"
+                    placeholder="https://ashbyhq.com/..."
+                    value={jobUrl}
+                    onChange={e => setJobUrl(e.target.value)}
+                  />
+                  <div className="relative flex items-center mb-6">
+                    <div className="flex-grow border-t border-white/30"></div>
+                    <span className="flex-shrink mx-4 text-[10px] font-black text-white/80 tracking-widest">OR PASTE RAW</span>
+                    <div className="flex-grow border-t border-white/30"></div>
+                  </div>
+                  <textarea
+                    className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-secondary transition-all placeholder:text-white/30"
+                    placeholder="Paste job description..."
+                    value={jobText}
+                    onChange={e => setJobText(e.target.value)}
+                  />
+                  <Button onClick={handleAnalyze} loading={loading}>
+                    {loading ? 'Analyzing Fit' : 'Analyze Fit'}
+                  </Button>
+                  {/* Fixed Alignment for Error */}
+                  {error && <p className="text-brand-primary mt-4 text-[10px] font-black uppercase tracking-widest text-left leading-relaxed">{error}</p>}
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {step === 'REPORT' && reportData && (
+            <motion.div key="report" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
+              <motion.div variants={fadeInUp} className="mb-10 text-left">
+                <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Match Audit</h1>
+                <h2 className="text-brand-tertiary text-lg">Structural Probability Report</h2>
+              </motion.div>
+
+              <motion.div variants={fadeInUp}>
+                <Card>
+                  <div className="text-center mb-6">
+                    <div className="text-6xl font-black text-brand-primary mb-2 tabular-nums">
+                      {reportData.overallFitScore ?? reportData.skillsMatch?.score ?? 0}%
+                    </div>
+                    <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-30">Fit Probability</div>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${reportData.overallFitScore ?? reportData.skillsMatch?.score ?? 0}%` }}
+                      transition={{ duration: 1.5, ease: 'easeOut' }}
+                      className="h-full bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary rounded-full"
+                    />
+                  </div>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={fadeInUp} className="mt-4 grid grid-cols-1 gap-4">
+                <Card className="border-l-2 border-l-[#3cff9e]">
+                  <h3 className="text-[10px] font-black tracking-widest text-[#3cff9e] mb-4 flex items-center gap-2 uppercase">
+                    <CheckCircle size={14} className="opacity-50" /> Competitive Edge
+                  </h3>
+                  <ul className="space-y-2">
+                    {reportData.strengths?.map((s, i) => (
+                      <li key={i} className="text-xs leading-relaxed opacity-70">• {s}</li>
+                    ))}
+                  </ul>
+                </Card>
+                <Card className="border-l-2 border-l-brand-primary">
+                  <h3 className="text-[10px] font-black tracking-widest text-brand-primary mb-4 flex items-center gap-2 uppercase">
+                    <AlertTriangle size={14} className="opacity-50" /> Resistance Points
+                  </h3>
+                  <ul className="space-y-2">
+                    {reportData.weaknesses?.map((w, i) => (
+                      <li key={i} className="text-xs leading-relaxed opacity-70">• {w}</li>
+                    ))}
+                  </ul>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={fadeInUp} className="mt-8 flex flex-col gap-3">
+                <Button onClick={() => handleDecision('Applied')} loading={loading}>
+                  {loading ? 'Marking Applied' : 'Confirm Application'}
                 </Button>
-                {/* Fixed Alignment for Error */}
-                {error && <p className="text-brand-primary mt-4 text-[10px] font-black uppercase tracking-widest text-left leading-relaxed">{error}</p>}
-              </Card>
+                <button onClick={() => handleDecision('Skipped')} disabled={loading} className="w-full text-[10px] font-black uppercase tracking-[0.3em] py-4 text-white/20 hover:text-white transition-all">Abort Search</button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
 
-        {step === 'ANALYZE' && (
-          <motion.div key="analyze" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
-            <motion.div variants={fadeInUp} className="mb-10 text-left">
-              <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Ask Analyst</h1>
-              <h2 className="text-brand-secondary text-lg">Analyze Job Market Fit</h2>
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <Card>
-                <h1 className="text-xs font-bold tracking-[0.2em] text-brand-tertiary mb-6 uppercase">Phase 2: Scrape & Scan</h1>
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-brand-secondary mb-2">Job URL (Auto-Scrape)</label>
-                <input
-                  type="url"
-                  className="w-full bg-brand-bg/80 border border-white/30 rounded-full px-6 py-4 mb-6 focus:outline-none focus:border-brand-secondary placeholder:text-white/30"
-                  placeholder="https://ashbyhq.com/..."
-                  value={jobUrl}
-                  onChange={e => setJobUrl(e.target.value)}
-                />
-                <div className="relative flex items-center mb-6">
-                  <div className="flex-grow border-t border-white/30"></div>
-                  <span className="flex-shrink mx-4 text-[10px] font-black text-white/80 tracking-widest">OR PASTE RAW</span>
-                  <div className="flex-grow border-t border-white/30"></div>
-                </div>
-                <textarea
-                  className="w-full bg-brand-bg/80 border border-white/30 rounded-2xl px-6 py-4 min-h-[160px] mb-4 focus:outline-none focus:border-brand-secondary transition-all placeholder:text-white/30"
-                  placeholder="Paste job description..."
-                  value={jobText}
-                  onChange={e => setJobText(e.target.value)}
-                />
-                <Button onClick={handleAnalyze} loading={loading}>
-                  {loading ? 'Analyzing Fit' : 'Analyze Fit'}
+          {step === 'SUCCESS' && (
+            <motion.div key="success" variants={fadeInUp} initial="hidden" animate="visible" exit="exit" className="w-full h-[70vh] flex flex-col items-center justify-center text-center">
+              <div className="w-24 h-24 bg-brand-secondary/20 rounded-full flex items-center justify-center mb-8 border border-brand-secondary/30 ring-8 ring-brand-secondary/5">
+                <CheckCircle size={48} className="text-brand-secondary" />
+              </div>
+              <h1 className="text-4xl font-black tracking-tighter mb-4">Move Locked.</h1>
+              <p className="text-white/50 text-sm mb-10 max-w-[280px] leading-relaxed">
+                {lastDecision === 'Applied'
+                  ? "Your move has been recorded. The Notion courier is currently syncing your pipeline."
+                  : "Log updated. Aborting this pursuit and clearing search fields."}
+              </p>
+              <div className="flex flex-col w-full gap-4">
+                <Button onClick={() => { setStep('ANALYZE'); setReportData(null); }}>
+                  ANALYZE NEXT JOB
                 </Button>
-                {/* Fixed Alignment for Error */}
-                {error && <p className="text-brand-primary mt-4 text-[10px] font-black uppercase tracking-widest text-left leading-relaxed">{error}</p>}
-              </Card>
+                <button onClick={() => setStep('DASHBOARD')} className="text-[10px] uppercase font-black tracking-widest text-white/30 hover:text-brand-secondary transition-all">
+                  View Progress Dashboard
+                </button>
+              </div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
 
-        {step === 'REPORT' && reportData && (
-          <motion.div key="report" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
-            <motion.div variants={fadeInUp} className="mb-10 text-left">
-              <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Match Audit</h1>
-              <h2 className="text-brand-tertiary text-lg">Structural Probability Report</h2>
+          {step === 'DASHBOARD' && (
+            <motion.div key="dashboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
+              <div className="mb-12 text-left">
+                <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Progress Log</h1>
+                <h2 className="text-brand-secondary text-lg">Pipeline Status</h2>
+              </div>
+
+              <div className="flex flex-col gap-16 pb-24">
+                {Object.entries(buckets).map(([key, list]) => (
+                  <DashboardSection
+                    key={key}
+                    bucketKey={key}
+                    list={list}
+                    onUpdate={fetchDashboard}
+                  />
+                ))}
+              </div>
             </motion.div>
-
-            <motion.div variants={fadeInUp}>
-              <Card>
-                <div className="text-center mb-6">
-                  <div className="text-6xl font-black text-brand-primary mb-2 tabular-nums">{reportData.skillsMatch?.score || 0}%</div>
-                  <div className="text-[10px] font-black tracking-[0.3em] uppercase opacity-30">Fit Probability</div>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${reportData.skillsMatch?.score || 0}%` }} transition={{ duration: 1.5, ease: 'easeOut' }} className="h-full bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary rounded-full" />
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div variants={fadeInUp} className="mt-4 grid grid-cols-1 gap-4">
-              <Card className="border-l-2 border-l-[#3cff9e]">
-                <h3 className="text-[10px] font-black tracking-widest text-[#3cff9e] mb-4 flex items-center gap-2 uppercase">
-                  <CheckCircle size={14} className="opacity-50" /> Competitive Edge
-                </h3>
-                <ul className="space-y-2">
-                  {reportData.strengths?.map((s, i) => (
-                    <li key={i} className="text-xs leading-relaxed opacity-70">• {s}</li>
-                  ))}
-                </ul>
-              </Card>
-              <Card className="border-l-2 border-l-brand-primary">
-                <h3 className="text-[10px] font-black tracking-widest text-brand-primary mb-4 flex items-center gap-2 uppercase">
-                  <AlertTriangle size={14} className="opacity-50" /> Resistance Points
-                </h3>
-                <ul className="space-y-2">
-                  {reportData.weaknesses?.map((w, i) => (
-                    <li key={i} className="text-xs leading-relaxed opacity-70">• {w}</li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
-
-            <motion.div variants={fadeInUp} className="mt-8 flex flex-col gap-3">
-              <Button onClick={() => handleDecision('Applied')} loading={loading}>
-                {loading ? 'Marking Applied' : 'Confirm Application'}
-              </Button>
-              <button onClick={() => handleDecision('Skipped')} disabled={loading} className="w-full text-[10px] font-black uppercase tracking-[0.3em] py-4 text-white/20 hover:text-white transition-all">Abort Search</button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {step === 'SUCCESS' && (
-          <motion.div key="success" variants={fadeInUp} initial="hidden" animate="visible" exit="exit" className="w-full h-[70vh] flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 bg-brand-secondary/20 rounded-full flex items-center justify-center mb-8 border border-brand-secondary/30 ring-8 ring-brand-secondary/5">
-              <CheckCircle size={48} className="text-brand-secondary" />
-            </div>
-            <h1 className="text-4xl font-black tracking-tighter mb-4">Move Locked.</h1>
-            <p className="text-white/50 text-sm mb-10 max-w-[280px] leading-relaxed">
-              {lastDecision === 'Applied'
-                ? "Your move has been recorded. The Notion courier is currently syncing your pipeline."
-                : "Log updated. Aborting this pursuit and clearing search fields."}
-            </p>
-            <div className="flex flex-col w-full gap-4">
-              <Button onClick={() => { setStep('ANALYZE'); setReportData(null); }}>
-                ANALYZE NEXT JOB
-              </Button>
-              <button onClick={() => setStep('DASHBOARD')} className="text-[10px] uppercase font-black tracking-widest text-white/30 hover:text-brand-secondary transition-all">
-                View Progress Dashboard
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 'DASHBOARD' && (
-          <motion.div key="dashboard" variants={staggerContainer} initial="hidden" animate="visible" exit="exit" className="w-full">
-            <div className="mb-12 text-left">
-              <h1 className="text-5xl font-black mb-2 tracking-tighter leading-[0.9]">Progress Log</h1>
-              <h2 className="text-brand-secondary text-lg">Pipeline Status</h2>
-            </div>
-
-            <div className="flex flex-col gap-16 pb-24">
-              {Object.entries(buckets).map(([key, list]) => (
-                <DashboardSection
-                  key={key}
-                  bucketKey={key}
-                  list={list}
-                  onUpdate={fetchDashboard}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </main>
+          )}
+        </AnimatePresence>
+      </main>
     </div >
   );
 }
@@ -536,7 +545,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
   const handleMove = async (newStatus) => {
     setMovingTo(newStatus);
     setLoading(true);
-    
+
     // Artificial delay for mobile feedback
     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -556,6 +565,8 @@ function ProgressItemCard({ report, status, onUpdate }) {
   };
 
   const isLightVersion = ['analyzed', 'applied'].includes(status);
+
+  const fitScore = report.overallFitScore ?? report.skillsMatchPercent ?? 0;
 
   return (
     <motion.div
@@ -588,7 +599,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
           <div className="flex items-center gap-4">
             {!isLightVersion && (
               <span className="text-sm font-bold text-brand-secondary tabular-nums opacity-80">
-                {report.skillsMatchPercent}%
+                {fitScore}%
               </span>
             )}
 
@@ -610,21 +621,21 @@ function ProgressItemCard({ report, status, onUpdate }) {
 
           {/* Rollback Icons (Closed State) */}
           {status === 'applied' && !isExpanded && (
-            <motion.div 
+            <motion.div
               layoutId={`rollback-${report.id}`}
               className="flex items-center justify-between w-9 text-white"
             >
-              <Package 
-                size={14} 
+              <Package
+                size={14}
                 strokeWidth={1.5}
-                onClick={(e) => { e.stopPropagation(); handleMove(report.skillsMatchPercent >= 80 ? 'FIT' : 'NO FIT'); }} 
-                className="cursor-pointer hover:text-brand-primary transition-colors" 
+                onClick={(e) => { e.stopPropagation(); handleMove(fitScore >= 80 ? 'FIT' : 'NO FIT'); }}
+                className="cursor-pointer hover:text-brand-primary transition-colors"
               />
-              <ThumbsDown 
-                size={14} 
+              <ThumbsDown
+                size={14}
                 strokeWidth={1.5}
-                onClick={(e) => { e.stopPropagation(); handleMove('DECLINE'); }} 
-                className="cursor-pointer hover:text-brand-primary transition-colors" 
+                onClick={(e) => { e.stopPropagation(); handleMove('DECLINE'); }}
+                className="cursor-pointer hover:text-brand-primary transition-colors"
               />
             </motion.div>
           )}
@@ -648,7 +659,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
                   <div>
                     <p className="text-xs font-black text-brand-tertiary uppercase tracking-[0.2em] mb-2">Fit Analysis</p>
                     <h4 className="text-2xl md:text-3xl font-black text-white tabular-nums">
-                      {report.skillsMatchPercent}%
+                      {fitScore}%
                     </h4>
                   </div>
                   <div className="flex-1">
@@ -678,9 +689,9 @@ function ProgressItemCard({ report, status, onUpdate }) {
                       <LinkIcon size={12} strokeWidth={2} className="text-white" />
                     </div>
                     {report.jobUrl ? (
-                      <a 
-                        href={report.jobUrl} 
-                        target="_blank" 
+                      <a
+                        href={report.jobUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-mono text-white/70 hover:text-brand-primary hover:font-bold transition-all flex items-center gap-2"
                       >
@@ -693,21 +704,21 @@ function ProgressItemCard({ report, status, onUpdate }) {
 
                   {/* Rollback Icons (Expanded State) */}
                   {status === 'applied' && isExpanded && (
-                    <motion.div 
+                    <motion.div
                       layoutId={`rollback-${report.id}`}
                       className="flex items-center justify-between w-9 text-white self-end mb-1"
                     >
-                      <Package 
-                        size={14} 
+                      <Package
+                        size={14}
                         strokeWidth={1.5}
-                        onClick={(e) => { e.stopPropagation(); handleMove(report.skillsMatchPercent >= 80 ? 'FIT' : 'NO FIT'); }} 
-                        className="cursor-pointer hover:text-brand-primary transition-colors" 
+                        onClick={(e) => { e.stopPropagation(); handleMove(fitScore >= 80 ? 'FIT' : 'NO FIT'); }}
+                        className="cursor-pointer hover:text-brand-primary transition-colors"
                       />
-                      <ThumbsDown 
-                        size={14} 
+                      <ThumbsDown
+                        size={14}
                         strokeWidth={1.5}
-                        onClick={(e) => { e.stopPropagation(); handleMove('DECLINE'); }} 
-                        className="cursor-pointer hover:text-brand-primary transition-colors" 
+                        onClick={(e) => { e.stopPropagation(); handleMove('DECLINE'); }}
+                        className="cursor-pointer hover:text-brand-primary transition-colors"
                       />
                     </motion.div>
                   )}
@@ -772,7 +783,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
                         ].map((item) => (
                           <div key={item.label} className="flex items-center gap-6">
                             {/* Column 1: REQ (Tickbox) */}
-                            <div 
+                            <div
                               onClick={() => setAssetReqs(prev => ({ ...prev, [item.label]: !prev[item.label] }))}
                               className="w-6 h-6 shrink-0 rounded-lg border border-white/20 flex items-center justify-center cursor-pointer hover:border-brand-primary/50 transition-colors"
                             >
@@ -832,7 +843,7 @@ function ProgressItemCard({ report, status, onUpdate }) {
                       {/* Won Checkbox */}
                       <div className="flex flex-col items-center gap-4 pb-1">
                         <p className="text-xs font-black text-brand-secondary uppercase tracking-[0.2em]">Won</p>
-                        <div 
+                        <div
                           onClick={handleWonToggle}
                           className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center cursor-pointer transition-all hover:border-brand-primary/50"
                         >
@@ -862,8 +873,8 @@ function ProgressItemCard({ report, status, onUpdate }) {
                           Update your APPLICANT STATUS and check WON again to celebrate.
                         </p>
                       </div>
-                      
-                      <button 
+
+                      <button
                         onClick={() => setNotification(null)}
                         className="rainbow-border w-full py-4 rounded-full bg-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-white hover:bg-brand-primary hover:text-black transition-all"
                       >
