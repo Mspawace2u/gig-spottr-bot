@@ -8,6 +8,7 @@ import { generateStrengthsWeaknesses } from '../creator/generate-strengths-weakn
 import { validateExtraction } from '../manager/validate-extraction.js';
 import { spottrConfig } from '../../config/spottr.js';
 import { saveUserCvToNotion, saveFitReportToNotion, saveJobToNotion } from '../courier/save-to-notion.js';
+import { logScoreBreakdown } from '../../lib/score-debug.js';
 
 /**
  * STRATEGIST AGENT - Orchestrates the Spottr Bot workflow
@@ -165,6 +166,12 @@ export async function analyzeJobFit(email, jobText, jobUrl, userData, titleHint 
         };
 
         const overallFitScore = calculateOverallFitScore({
+            rawSkillsScore: skillsMatch.score,
+            evidenceScore: evidenceClassification.score,
+            experienceScore: experienceMatch.score
+        });
+
+        logScoreBreakdown({
             rawSkillsScore: skillsMatch.score,
             evidenceScore: evidenceClassification.score,
             experienceScore: experienceMatch.score

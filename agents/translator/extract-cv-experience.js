@@ -1,5 +1,6 @@
 import { callLLM, parseJsonFromLLM } from '../../lib/llm.js';
 import { spottrConfig } from '../../config/spottr.js';
+import { logExperienceExtraction } from '../../lib/score-debug.js';
 
 /**
  * TRANSLATOR AGENT - Skill: Extract CV Experience
@@ -84,10 +85,12 @@ export async function extractCvExperience(cvText) {
             }
         }
 
-        return {
+        const result = {
             experience: validatedExperience,
             totalYears: finalTotalYears
         };
+        logExperienceExtraction('extractCvExperience', result);
+        return result;
 
     } catch (error) {
         console.error('Error extracting CV experience:', error);

@@ -1,4 +1,5 @@
 import { callLLM, parseJsonFromLLM } from '../../lib/llm.js';
+import { logSkillsExtraction } from '../../lib/score-debug.js';
 
 /**
  * TRANSLATOR AGENT - Skill: Extract CV Skills
@@ -50,6 +51,7 @@ export async function extractCvSkills(cvText) {
             throw new Error(`Only ${validatedSkills.length} usable skills found. Refusing to save weak CV skill baseline.`);
         }
 
+        logSkillsExtraction('extractCvSkills', validatedSkills);
         return validatedSkills;
 
     } catch (error) {

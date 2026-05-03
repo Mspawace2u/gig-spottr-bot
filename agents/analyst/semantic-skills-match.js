@@ -1,4 +1,5 @@
 import { callLLM, parseJsonFromLLM } from '../../lib/llm.js';
+import { logSemanticMatchStats } from '../../lib/score-debug.js';
 
 /**
  * ANALYST AGENT - Skill: Semantic Skills Match
@@ -162,7 +163,7 @@ Return ONLY valid JSON in this format:
             ? (requiredScore * 0.75) + (preferredScore * 0.25)
             : requiredScore;
 
-        return {
+        const result = {
             score: Math.round(finalScore),
 
             requiredScore: Math.round(requiredScore),
@@ -213,6 +214,9 @@ Return ONLY valid JSON in this format:
                 .filter(match => match.matchType === 'no_match')
                 .map(match => match.jobSkill)
         };
+
+        logSemanticMatchStats('semanticSkillsMatch', result);
+        return result;
 
     } catch (error) {
         console.error('Error in semantic skills match:', error);
