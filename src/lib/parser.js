@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { PDFParse } from 'pdf-parse';
+import { extractText, getDocumentProxy } from 'unpdf';
 
 const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
@@ -328,14 +328,9 @@ export async function parseFile(fileBlob) {
         const fileName = fileBlob.name.toLowerCase();
 
         if (fileName.endsWith('.pdf')) {
-            const parser = new PDFParse({ data: buffer });
-
-            try {
-                const result = await parser.getText();
-                return result.text;
-            } finally {
-                await parser.destroy?.();
-            }
+            const pdf = await getDocumentProxy(new Uint8Array(buffer));
+            const { text } = await extractText(pdf, { mergePages: true });
+            return text;
         } else if (fileName.endsWith('.txt')) {
             return buffer.toString('utf-8');
         } else {
